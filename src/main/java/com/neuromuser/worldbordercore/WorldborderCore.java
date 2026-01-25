@@ -18,6 +18,8 @@ public class WorldborderCore implements ModInitializer {
 
         @Override
         public void onInitialize() {
+                ItemMultiplierSystem.initialize();
+
                 ConfigManager.load(FabricLoader.getInstance().getConfigDir().resolve("worldborder-core.json"));
 
                 ConfigNetworking.init();

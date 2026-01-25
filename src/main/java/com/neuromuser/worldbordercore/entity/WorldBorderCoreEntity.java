@@ -1,6 +1,7 @@
 package com.neuromuser.worldbordercore.entity;
 
 import com.neuromuser.worldbordercore.CoreState;
+import com.neuromuser.worldbordercore.ItemMultiplierSystem;
 import com.neuromuser.worldbordercore.mixin.ArmorStandEntityAccessor;
 import net.minecraft.entity.*;
 import net.minecraft.entity.damage.DamageSource;
@@ -13,7 +14,6 @@ import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
@@ -38,6 +38,8 @@ public class WorldBorderCoreEntity extends MobEntity {
             DataTracker.registerData(WorldBorderCoreEntity.class, TrackedDataHandlerRegistry.STRING);
     private static final TrackedData<Integer> REQUIRED_COUNT =
             DataTracker.registerData(WorldBorderCoreEntity.class, TrackedDataHandlerRegistry.INTEGER);
+    private static final TrackedData<Integer> COMPLETION_COUNT =
+            DataTracker.registerData(WorldBorderCoreEntity.class, TrackedDataHandlerRegistry.INTEGER);
 
     private UUID displayEntityUuid;
     private int ticksSinceLastCollection = 0;
@@ -53,7 +55,8 @@ public class WorldBorderCoreEntity extends MobEntity {
     protected void initDataTracker() {
         super.initDataTracker();
         this.dataTracker.startTracking(REQUIRED_ITEM, "minecraft:diamond");
-        this.dataTracker.startTracking(REQUIRED_COUNT, 20);
+        this.dataTracker.startTracking(REQUIRED_COUNT, 16);
+        this.dataTracker.startTracking(COMPLETION_COUNT, 0);
     }
 
     public static DefaultAttributeContainer.Builder createAttributes() {
@@ -114,27 +117,45 @@ public class WorldBorderCoreEntity extends MobEntity {
         Box box = this.getBoundingBox().expand(COLLECTION_RADIUS);
         List<ItemEntity> items = this.getWorld().getEntitiesByClass(
                 ItemEntity.class, box,
-                e -> e.getStack().isOf(getRequiredItem()) && !e.isRemoved()
+                e -> !e.isRemoved()
         );
 
         for (ItemEntity item : items) {
             ItemStack stack = item.getStack();
-            int taken = Math.min(stack.getCount(), getRequiredCount());
 
-            stack.decrement(taken);
-            this.dataTracker.set(REQUIRED_COUNT, getRequiredCount() - taken);
-            this.ticksSinceLastCollection = 0;
+            if (stack.isOf(getRequiredItem())) {
+                int taken = Math.min(stack.getCount(), getRequiredCount());
 
-            if (stack.isEmpty()) item.discard();
+                stack.decrement(taken);
+                this.dataTracker.set(REQUIRED_COUNT, getRequiredCount() - taken);
+                this.ticksSinceLastCollection = 0;
 
-            ((ServerWorld) this.getWorld()).spawnParticles(
-                    ParticleTypes.HAPPY_VILLAGER,
-                    item.getX(), item.getY() + 0.5, item.getZ(),
-                    8, 0.2, 0.2, 0.2, 0.05
-            );
+                if (stack.isEmpty()) item.discard();
 
-            if (getRequiredCount() <= 0) {
-                onRequirementFulfilled();
+                ((ServerWorld) this.getWorld()).spawnParticles(
+                        ParticleTypes.HAPPY_VILLAGER,
+                        item.getX(), item.getY() + 0.5, item.getZ(),
+                        8, 0.2, 0.2, 0.2, 0.05
+                );
+
+                if (getRequiredCount() <= 0) {
+                    onRequirementFulfilled();
+                    break;
+                }
+            } else if (ItemMultiplierSystem.isRerollItem(stack.getItem()) && stack.getCount() >= 1) {
+                stack.decrement(1);
+                if (stack.isEmpty()) item.discard();
+
+                ((ServerWorld) this.getWorld()).spawnParticles(
+                        ParticleTypes.END_ROD,
+                        item.getX(), item.getY() + 0.5, item.getZ(),
+                        20, 0.3, 0.3, 0.3, 0.1
+                );
+
+                this.getWorld().playSound(null, this.getBlockPos(),
+                        SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.BLOCKS, 1f, 1.2f);
+
+                rollNewRequirement();
                 break;
             }
         }
@@ -147,16 +168,17 @@ public class WorldBorderCoreEntity extends MobEntity {
         WorldBorder border = world.getWorldBorder();
         border.setSize(border.getSize() + 10.0);
 
+        int completions = this.dataTracker.get(COMPLETION_COUNT) + 1;
+        this.dataTracker.set(COMPLETION_COUNT, completions);
+
         rollNewRequirement();
     }
 
     private void rollNewRequirement() {
-        List<Item> pool = Registries.ITEM.stream()
-                .filter(i -> i != Items.AIR && i.getName().getString().length() > 1)
-                .toList();
+        int completions = this.dataTracker.get(COMPLETION_COUNT);
 
-        Item item = pool.get(this.random.nextInt(pool.size()));
-        int count = this.random.nextBetween(5, 32);
+        Item item = ItemMultiplierSystem.getRandomItem(this.random);
+        int count = ItemMultiplierSystem.getRequiredCount(item, completions);
 
         this.dataTracker.set(REQUIRED_ITEM, Registries.ITEM.getId(item).toString());
         this.dataTracker.set(REQUIRED_COUNT, count);
@@ -204,11 +226,10 @@ public class WorldBorderCoreEntity extends MobEntity {
     @Override
     public void writeCustomDataToNbt(NbtCompound nbt) {
         super.writeCustomDataToNbt(nbt);
-        // Save the item ID and the count
         nbt.putString("RequiredItem", this.dataTracker.get(REQUIRED_ITEM));
         nbt.putInt("RequiredCount", this.dataTracker.get(REQUIRED_COUNT));
+        nbt.putInt("CompletionCount", this.dataTracker.get(COMPLETION_COUNT));
 
-        // Also save the display UUID so it doesn't duplicate armor stands
         if (this.displayEntityUuid != null) {
             nbt.putUuid("DisplayEntityUuid", this.displayEntityUuid);
         }
@@ -217,16 +238,18 @@ public class WorldBorderCoreEntity extends MobEntity {
     @Override
     public void readCustomDataFromNbt(NbtCompound nbt) {
         super.readCustomDataFromNbt(nbt);
-        // Load the item ID and the count back into the DataTracker
         if (nbt.contains("RequiredItem")) {
             this.dataTracker.set(REQUIRED_ITEM, nbt.getString("RequiredItem"));
         }
         if (nbt.contains("RequiredCount")) {
             this.dataTracker.set(REQUIRED_COUNT, nbt.getInt("RequiredCount"));
         }
+        if (nbt.contains("CompletionCount")) {
+            this.dataTracker.set(COMPLETION_COUNT, nbt.getInt("CompletionCount"));
+        }
 
-        // Restore the link to the armor stand
         if (nbt.contains("DisplayEntityUuid")) {
             this.displayEntityUuid = nbt.getUuid("DisplayEntityUuid");
         }
-    }}
+    }
+}
