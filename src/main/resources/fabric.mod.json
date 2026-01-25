@@ -1,0 +1,41 @@
+{
+"schemaVersion": 1,
+"id": "worldborder-core",
+"version": "${version}",
+"name": "Worldborder Core",
+"description": "A Fabric mod",
+"authors": [
+"Your Name"
+],
+"contact": {
+"homepage": "https://example.com/",
+"sources": "https://github.com/yourusername/worldborder-core"
+},
+"license": "MIT",
+"icon": "assets/worldborder-core/icon.png",
+"environment": "*",
+"entrypoints": {
+"main": [
+"com.neuromuser.worldbordercore.WorldborderCore"
+],
+"client": [
+"com.neuromuser.worldbordercore.WorldborderCoreClient"
+],
+"modmenu": [
+"com.neuromuser.worldbordercore.ModMenuIntegration"
+]
+},
+"mixins": [
+"worldborder-core.mixins.json",
+{
+"config": "worldborder-core.client.mixins.json",
+"environment": "client"
+}
+],
+"depends": {
+"fabricloader": ">=0.16.0",
+"minecraft": "~1.20.1",
+"java": ">=17",
+"fabric-api": "*"
+}
+}
