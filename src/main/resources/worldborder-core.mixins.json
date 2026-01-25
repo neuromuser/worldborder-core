@@ -2,7 +2,9 @@
 "required": true,
 "package": "com.neuromuser.worldbordercore.mixin",
 "compatibilityLevel": "JAVA_17",
-"mixins": [],
+"mixins": [
+  "ArmorStandEntityAccessor"
+],
 "client": [],
 "injectors": {
 "defaultRequire": 1

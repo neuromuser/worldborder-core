@@ -9,11 +9,13 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 public class WorldborderCoreClient implements ClientModInitializer {
         @Override
         public void onInitializeClient() {
-        ConfigNetworkingClient.init();
+                ConfigNetworkingClient.init();
+
                 EntityModelLayerRegistry.registerModelLayer(
                         WorldBorderCoreRenderer.MODEL_LAYER,
                         WorldBorderCoreModel::getTexturedModelData
                 );
+
                 EntityRendererRegistry.register(ModEntities.WORLD_BORDER_CORE, WorldBorderCoreRenderer::new);
         }
 }

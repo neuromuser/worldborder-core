@@ -1,33 +1,37 @@
 package com.neuromuser.worldbordercore;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
 public class ConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static Config config = new Config();
     private static Config serverConfig = null;
     private static boolean hasServerMod = false;
+
     public static Config get() {
-    return hasServerMod && serverConfig != null ? serverConfig : config;
+        return hasServerMod && serverConfig != null ? serverConfig : config;
     }
+
     public static boolean shouldRunServerLogic() {
-    return hasServerMod;
+        return hasServerMod;
     }
+
     public static void load(Path path) {
         try {
             if (Files.exists(path)) {
-                String json = Files.readString(path);
-                config = GSON.fromJson(json, Config.class);
+                config = GSON.fromJson(Files.readString(path), Config.class);
             } else {
                 save(path);
-                }
             }
-        catch (IOException e) {
+        } catch (IOException e) {
             System.err.println("Failed to load config: " + e.getMessage());
         }
     }
+
     public static void save(Path path) {
         try {
             Files.createDirectories(path.getParent());
@@ -36,9 +40,11 @@ public class ConfigManager {
             System.err.println("Failed to save config: " + e.getMessage());
         }
     }
+
     public static String toJson() {
-    return GSON.toJson(config);
+        return GSON.toJson(config);
     }
+
     public static void receiveServerConfig(String json) {
         serverConfig = GSON.fromJson(json, Config.class);
         hasServerMod = true;

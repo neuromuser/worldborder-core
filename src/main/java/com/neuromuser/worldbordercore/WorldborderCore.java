@@ -1,12 +1,10 @@
 package com.neuromuser.worldbordercore;
 
-import com.neuromuser.worldbordercore.ConfigManager;
-import com.neuromuser.worldbordercore.ConfigNetworking;
 import com.neuromuser.worldbordercore.entity.WorldBorderCoreEntity;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
-
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -20,23 +18,25 @@ public class WorldborderCore implements ModInitializer {
 
         @Override
         public void onInitialize() {
-        ConfigManager.load(FabricLoader.getInstance().getConfigDir().resolve("worldborder-core.json"));
-        ConfigNetworking.init();
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            ConfigNetworking.sendToClient(handler.player);
-        });
+                ConfigManager.load(FabricLoader.getInstance().getConfigDir().resolve("worldborder-core.json"));
 
+                ConfigNetworking.init();
+                ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+                        ConfigNetworking.sendToClient(handler.player);
+                });
 
-        Registry.register(Registries.ENTITY_TYPE,
+                Registry.register(Registries.ENTITY_TYPE,
                         new Identifier(MOD_ID, "worldborder_core"),
                         ModEntities.WORLD_BORDER_CORE);
 
-        FabricDefaultAttributeRegistry.register(ModEntities.WORLD_BORDER_CORE,
+                FabricDefaultAttributeRegistry.register(ModEntities.WORLD_BORDER_CORE,
                         WorldBorderCoreEntity.createAttributes());
 
-        WorldBorderCoreManager.initialize();
+                WorldBorderCoreManager.initialize();
+                CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+                        WorldBorderCoreCommand.register(dispatcher, environment);
+                });
 
-                LOGGER.info("World Border Core mod initialized successfully");
+                LOGGER.info("World Border Core initialized");
         }
 }
-
