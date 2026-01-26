@@ -12,5 +12,7 @@
   "worldbordercore.command.spawn.failed": "Помилка створення",
   "worldbordercore.command.spawn.wrong_dimension": "Тільки у звичайному світі",
   "worldbordercore.command.clear.success": "Видалено %s ядер",
-  "worldbordercore.command.clear.none": "Ядер не знайдено"
+  "worldbordercore.command.clear.none": "Ядер не знайдено",
+  "worldbordercore.command.count.found": "Знайдено:",
+  "worldbordercore.command.count.not_found": "Не знайдено - "
 }

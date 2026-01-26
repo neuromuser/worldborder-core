@@ -12,5 +12,10 @@
   "worldbordercore.command.spawn.failed": "Failed to spawn",
   "worldbordercore.command.spawn.wrong_dimension": "Overworld only",
   "worldbordercore.command.clear.success": "Removed %s core(s)",
-  "worldbordercore.command.clear.none": "No cores found"
+  "worldbordercore.command.clear.none": "No cores found",
+  "worldbordercore.command.count.wrong_dimension": "Wrong dimension!",
+  "worldbordercore.command.count.not_scanned": "Item not scanned!",
+  "worldbordercore.command.count.invalid_item": "Invalid item!",
+  "worldbordercore.command.count.found": "Found:",
+  "worldbordercore.command.count.not_found": "Not found - "
 }

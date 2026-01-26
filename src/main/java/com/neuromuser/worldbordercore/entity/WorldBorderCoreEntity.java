@@ -34,7 +34,7 @@ import java.util.UUID;
 
 public class WorldBorderCoreEntity extends MobEntity {
     private static final int REROLL_TIME = 20 * 24000;
-    private static final double COLLECTION_RADIUS = 2.5;
+    private static final double COLLECTION_RADIUS = 1.2;
 
     private static final TrackedData<String> REQUIRED_ITEM =
             DataTracker.registerData(WorldBorderCoreEntity.class, TrackedDataHandlerRegistry.STRING);
@@ -43,7 +43,7 @@ public class WorldBorderCoreEntity extends MobEntity {
     private static final TrackedData<Integer> COMPLETION_COUNT =
             DataTracker.registerData(WorldBorderCoreEntity.class, TrackedDataHandlerRegistry.INTEGER);
 
-    private UUID displayEntityUuid;
+    private UUID textDisplayUuid;
     private int ticksSinceLastCollection = 0;
     private boolean hasRolledFirstRequirement = false;
     private int ticksUntilNextRequirement = 0;
@@ -76,25 +76,20 @@ public class WorldBorderCoreEntity extends MobEntity {
 
         if (this.getWorld().isClient) return;
 
-        // Initial requirement roll after first scan
         if (!hasRolledFirstRequirement && WorldScanner.isScanned() && !WorldScanner.isScanning()) {
             rollNewRequirement();
             hasRolledFirstRequirement = true;
         }
 
-        // Handle delayed requirement generation - only decrement if not scanning
         if (ticksUntilNextRequirement > 0) {
-            // Wait for scanning to complete before continuing countdown
             if (!WorldScanner.isScanning() && WorldScanner.isScanned()) {
                 ticksUntilNextRequirement--;
                 if (ticksUntilNextRequirement == 0) {
                     rollNewRequirement();
                 }
             }
-            // If scanning, don't decrement - just wait
         }
 
-        // Only collect items after first requirement has been rolled and no delay is active
         if (hasRolledFirstRequirement && ticksUntilNextRequirement == 0 && getRequiredCount() > 0) {
             if (this.age % 10 == 0) collectItems();
             if (++ticksSinceLastCollection >= REROLL_TIME) rollNewRequirement();
@@ -105,67 +100,60 @@ public class WorldBorderCoreEntity extends MobEntity {
     }
 
     private void updateDisplay(ServerWorld world) {
-        if (this.displayEntityUuid != null && world.getEntity(this.displayEntityUuid) == null) {
-            return;
+        // Get or create text display (above the core)
+        ArmorStandEntity textDisplay = getTextDisplay(world);
+        if (textDisplay == null) {
+            textDisplay = createTextDisplay(world);
         }
 
-        ArmorStandEntity display = getDisplayEntity(world);
+        if (textDisplay == null) return;
 
-        if (display == null) {
-            display = EntityType.ARMOR_STAND.create(world);
-            if (display == null) return;
+        // Position text display above the core
+        textDisplay.setPosition(this.getX(), this.getY() + 1.2, this.getZ());
 
-            ((ArmorStandEntityAccessor) display).invokeSetMarker(true);
-            display.setInvisible(true);
-            display.setNoGravity(true);
-            display.setCustomNameVisible(true);
-            display.setCustomName(Text.literal("WorldBorderCoreDisplay"));
-
-            world.spawnEntity(display);
-            this.displayEntityUuid = display.getUuid();
-        }
-
-        display.setPosition(this.getX(), this.getY() - 0.8, this.getZ());
-
-        // Priority 1: Show scanning progress
+        // Update text content based on state
         if (WorldScanner.isScanning()) {
             int progress = WorldScanner.getProgress();
-            display.setCustomName(Text.translatable("worldbordercore.display.generating", progress));
-            display.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.COMPASS));
+            textDisplay.setCustomName(Text.translatable("worldbordercore.display.generating", progress));
         }
-        // Priority 2: Show waiting for scan
         else if (!WorldScanner.isScanned()) {
-            display.setCustomName(Text.translatable("worldbordercore.display.waiting"));
-            display.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.COMPASS));
+            textDisplay.setCustomName(Text.translatable("worldbordercore.display.waiting"));
         }
-        // Priority 3: Show countdown (only if scan is complete and delay is active)
         else if (ticksUntilNextRequirement > 0) {
             int secondsLeft = (ticksUntilNextRequirement + 19) / 20;
-            display.setCustomName(Text.translatable("worldbordercore.display.countdown", secondsLeft));
-            display.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.CLOCK));
+            textDisplay.setCustomName(Text.translatable("worldbordercore.display.countdown", secondsLeft));
         }
-        // Priority 4: Show requirement
         else if (getRequiredCount() > 0) {
             Item required = getRequiredItem();
             if (required != null && required != Items.AIR) {
-                display.setCustomName(Text.translatable("worldbordercore.display.requirement",
+                textDisplay.setCustomName(Text.translatable("worldbordercore.display.requirement",
                         getRequiredCount(), required.getName().getString()));
-                display.equipStack(EquipmentSlot.HEAD, new ItemStack(required));
             } else {
-                display.setCustomName(Text.translatable("worldbordercore.display.initializing"));
-                display.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.BARRIER));
+                textDisplay.setCustomName(Text.translatable("worldbordercore.display.initializing"));
             }
-        }
-        // Priority 5: Initializing (fallback)
-        else {
-            display.setCustomName(Text.translatable("worldbordercore.display.initializing"));
-            display.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.BARRIER));
+        } else {
+            textDisplay.setCustomName(Text.translatable("worldbordercore.display.initializing"));
         }
     }
 
-    private ArmorStandEntity getDisplayEntity(ServerWorld world) {
-        if (this.displayEntityUuid == null) return null;
-        Entity entity = world.getEntity(this.displayEntityUuid);
+    private ArmorStandEntity createTextDisplay(ServerWorld world) {
+        ArmorStandEntity display = EntityType.ARMOR_STAND.create(world);
+        if (display == null) return null;
+
+        ((ArmorStandEntityAccessor) display).invokeSetMarker(true);
+        display.setInvisible(true);
+        display.setNoGravity(true);
+        display.setCustomNameVisible(true);
+        display.setCustomName(Text.literal("WorldBorderCoreTextDisplay"));
+
+        world.spawnEntity(display);
+        this.textDisplayUuid = display.getUuid();
+        return display;
+    }
+
+    private ArmorStandEntity getTextDisplay(ServerWorld world) {
+        if (this.textDisplayUuid == null) return null;
+        Entity entity = world.getEntity(this.textDisplayUuid);
         return (entity instanceof ArmorStandEntity) ? (ArmorStandEntity) entity : null;
     }
 
@@ -233,29 +221,24 @@ public class WorldBorderCoreEntity extends MobEntity {
         int completions = this.dataTracker.get(COMPLETION_COUNT) + 1;
         this.dataTracker.set(COMPLETION_COUNT, completions);
 
-        // Clear current requirement and set delay
+
         this.dataTracker.set(REQUIRED_ITEM, "");
         this.dataTracker.set(REQUIRED_COUNT, 0);
         this.ticksUntilNextRequirement = 60;
     }
 
     private void rollNewRequirement() {
-        // Only roll if scanner is ready
-        if (WorldScanner.isScanning()) {
-            return;
-        }
+        if (WorldScanner.isScanning()) return;
+        if (!WorldScanner.isScanned()) return;
 
-        if (!WorldScanner.isScanned()) {
-            return;
-        }
-
+        WorldBorder border = this.getWorld().getWorldBorder();
+        double borderSize = border.getSize();
         int completions = this.dataTracker.get(COMPLETION_COUNT);
 
-        Item item = WorldScanner.getRandomAvailableItem(this.random);
+        Item item = WorldScanner.getRandomAvailableItem(this.random, borderSize);
         int count = WorldScanner.getRequiredCount(item, completions);
 
         String itemId = Registries.ITEM.getId(item).toString();
-
         this.dataTracker.set(REQUIRED_ITEM, itemId);
         this.dataTracker.set(REQUIRED_COUNT, count);
         this.ticksSinceLastCollection = 0;
@@ -296,8 +279,10 @@ public class WorldBorderCoreEntity extends MobEntity {
     public void remove(RemovalReason reason) {
         if (!this.getWorld().isClient) {
             ServerWorld world = (ServerWorld) this.getWorld();
-            ArmorStandEntity display = getDisplayEntity(world);
-            if (display != null) display.discard();
+
+            // Remove text display armor stand
+            ArmorStandEntity textDisplay = getTextDisplay(world);
+            if (textDisplay != null) textDisplay.discard();
 
             CoreState state = world.getPersistentStateManager()
                     .getOrCreate(CoreState::fromNbt, CoreState::new, "worldborder_core");
@@ -317,8 +302,8 @@ public class WorldBorderCoreEntity extends MobEntity {
         nbt.putBoolean("HasRolledFirst", this.hasRolledFirstRequirement);
         nbt.putInt("TicksUntilNext", this.ticksUntilNextRequirement);
 
-        if (this.displayEntityUuid != null) {
-            nbt.putUuid("DisplayEntityUuid", this.displayEntityUuid);
+        if (this.textDisplayUuid != null) {
+            nbt.putUuid("TextDisplayUuid", this.textDisplayUuid);
         }
     }
 
@@ -341,8 +326,8 @@ public class WorldBorderCoreEntity extends MobEntity {
             this.ticksUntilNextRequirement = nbt.getInt("TicksUntilNext");
         }
 
-        if (nbt.contains("DisplayEntityUuid")) {
-            this.displayEntityUuid = nbt.getUuid("DisplayEntityUuid");
+        if (nbt.contains("TextDisplayUuid")) {
+            this.textDisplayUuid = nbt.getUuid("TextDisplayUuid");
         }
     }
 }

@@ -35,8 +35,12 @@ public class WorldBorderCoreManager {
 
             CoreState state = getState(world);
             state.setCoreUuid(core.getUuid());
+            state.markDirty(); // Critical: ensure the UUID is saved!
 
-            WorldborderCore.LOGGER.info("Spawned World Border Core at ({}, {}, {})", centerX, groundY + 1.0, centerZ);
+            // NEW: Immediately trigger the scan when manually spawned
+            WorldScanner.startScan(world);
+
+            WorldborderCore.LOGGER.info("Spawned World Border Core and started scan.");
         }
         return core;
     }
@@ -51,7 +55,11 @@ public class WorldBorderCoreManager {
             } else if (entity instanceof ArmorStandEntity stand) {
                 if (stand.hasCustomName()) {
                     String name = stand.getCustomName().getString();
-                    if (name.contains("WorldBorderCoreDisplay") || name.contains("§e") && name.contains("x §f")) {
+                    // Handle both old and new display armor stand names
+                    if (name.contains("WorldBorderCoreDisplay") ||
+                            name.contains("WorldBorderCoreTextDisplay") ||
+                            name.contains("WorldBorderCoreItemDisplay") ||
+                            (name.contains("§e") && name.contains("x §f"))) {
                         stand.discard();
                         removed++;
                     }

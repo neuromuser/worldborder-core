@@ -40,6 +40,14 @@ public class WorldBorderCoreModel extends EntityModel<WorldBorderCoreEntity> {
         return TexturedModelData.of(modelData, 64, 64);
     }
 
+    /**
+     * Control whether the core is visible.
+     * When false, only the ring will be visible (for when item is displayed inside).
+     */
+    public void setCoreVisible(boolean visible) {
+        this.core.visible = visible;
+    }
+
     @Override
     public void setAngles(WorldBorderCoreEntity entity, float limbSwing, float limbSwingAmount,
                           float ageInTicks, float netHeadYaw, float headPitch) {

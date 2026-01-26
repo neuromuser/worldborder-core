@@ -28,7 +28,15 @@ public class WorldborderCore implements ModInitializer {
         private static int rescanDelay = 0;
         private static boolean hasInitialScan = false;
 
-        @Override
+    public static boolean isHasInitialScan() {
+        return hasInitialScan;
+    }
+
+    public static void setHasInitialScan(boolean hasInitialScan) {
+        WorldborderCore.hasInitialScan = hasInitialScan;
+    }
+
+    @Override
         public void onInitialize() {
                 WorldScanner.initialize();
 
@@ -53,37 +61,39 @@ public class WorldborderCore implements ModInitializer {
 
                 ServerTickEvents.END_SERVER_TICK.register(WorldborderCore::onServerTick);
         }
-
         private static void onServerTick(MinecraftServer server) {
                 ServerWorld overworld = server.getWorld(World.OVERWORLD);
                 if (overworld == null) return;
-
-                WorldScanner.tick(overworld);
 
                 WorldBorder border = overworld.getWorldBorder();
                 double currentSize = border.getSize();
                 double currentCenterX = border.getCenterX();
                 double currentCenterZ = border.getCenterZ();
 
-                if (!hasInitialScan && !WorldScanner.isScanning() && !WorldScanner.isScanned()) {
-                        WorldBorderCoreEntity core = WorldBorderCoreManager.getCore(overworld);
-                        if (core != null) {
-                                WorldScanner.startScan(overworld);
-                                hasInitialScan = true;
-                        }
+                // 1. TICK THE SCANNER TO PROGRESS SCANNING
+                WorldScanner.tick(overworld);
+
+                // 2. CHECK IF CORE EXISTS AND NEEDS SCAN
+                WorldBorderCoreEntity core = WorldBorderCoreManager.getCore(overworld);
+                if (core != null && !WorldScanner.isScanning() && !WorldScanner.isScanned()) {
+                        LOGGER.info("Core exists but no scan data. Starting scan...");
+                        WorldScanner.startScan(overworld);
                 }
 
+                // 3. DETECT BORDER CHANGES (existing code)
                 if (currentSize != lastBorderSize || currentCenterX != lastCenterX || currentCenterZ != lastCenterZ) {
                         lastBorderSize = currentSize;
                         lastCenterX = currentCenterX;
                         lastCenterZ = currentCenterZ;
 
-                        if (currentSize < 59999900 && WorldScanner.isScanned()) {
+                        if (WorldScanner.isScanned() && !WorldScanner.isScanning()) {
                                 needsRescan = true;
-                                rescanDelay = 60;
+                                rescanDelay = 40;
+                                WorldborderCore.LOGGER.info("Border change detected. Rescan scheduled.");
                         }
                 }
 
+                // 4. HANDLE DELAYED RESCAN (existing code)
                 if (needsRescan && rescanDelay > 0) {
                         rescanDelay--;
                         if (rescanDelay == 0) {
