@@ -53,8 +53,13 @@ public class WorldScanner {
     private static List<ServerPlayerEntity> playersToScan = new ArrayList<>();
     private static int currentPlayerIndex = 0;
 
-    private static int totalPhases = 4; 
+    private static final Map<Item, Integer> persistentResources = new ConcurrentHashMap<>();
     private static int currentPhase = 0;
+    private static boolean persistentScanned = false;
+    private static double persistentLastScannedSize = 0;
+    private static double persistentLastScannedCenterX = 0;
+    private static double persistentLastScannedCenterZ = 0;
+
 
     public static void initialize() {
         setupUnobtainableItems();
@@ -104,6 +109,7 @@ public class WorldScanner {
             LOGGER.info("Keeping existing {} item counts, will only scan new area", availableResources.size());
         } else {
             LOGGER.info("Starting FULL scan...");
+            savePersistentState();
             availableResources.clear();
         }
 
@@ -161,11 +167,6 @@ public class WorldScanner {
             long innerRangeZ = (long) (innerMaxZ - innerMinZ);
             long skippedBlocks = innerRangeX * innerRangeY * innerRangeZ;
             totalBlocks -= skippedBlocks;
-
-            if (isIncrementalScan) {
-                LOGGER.info("Skipping previously scanned area ({} blocks), only scanning {} new blocks",
-                        skippedBlocks, totalBlocks);
-            }
         }
 
         isScanning = true;
@@ -445,6 +446,8 @@ public class WorldScanner {
             scanningNether = false;
             LOGGER.info("Nether scan complete!");
         }
+
+        savePersistentState();
 
         LOGGER.info("World scan complete! Found {} unique items across all sources", availableResources.size());
 
@@ -808,6 +811,11 @@ public class WorldScanner {
     }
 
     public static void reset() {
+        if (isScanned() && lastScannedSize > 0) {
+            WorldborderCore.LOGGER.info("WorldScanner: Preserving scanned state for world re-entry");
+            return;
+        }
+
         availableResources.clear();
         scanned = false;
         isScanning = false;
@@ -822,6 +830,35 @@ public class WorldScanner {
         playersToScan.clear();
         currentPlayerIndex = 0;
         currentPhase = 0;
-        LOGGER.info("WorldScanner reset");
+        WorldborderCore.LOGGER.info("WorldScanner reset");
+    }
+
+
+    public static void savePersistentState() {
+        if (scanned) {
+            persistentResources.clear();
+            persistentResources.putAll(availableResources);
+            persistentScanned = true;
+            persistentLastScannedSize = lastScannedSize;
+            persistentLastScannedCenterX = lastScannedCenterX;
+            persistentLastScannedCenterZ = lastScannedCenterZ;
+            LOGGER.info("Saved persistent scan state for {} items", persistentResources.size());
+        }
+    }
+
+    public static void restorePersistentState() {
+        if (persistentScanned) {
+            availableResources.clear();
+            availableResources.putAll(persistentResources);
+            scanned = true;
+            lastScannedSize = persistentLastScannedSize;
+            lastScannedCenterX = persistentLastScannedCenterX;
+            lastScannedCenterZ = persistentLastScannedCenterZ;
+            LOGGER.info("Restored persistent scan state for {} items", availableResources.size());
+        }
+    }
+
+    public static boolean hasPersistentScan() {
+        return persistentScanned;
     }
 }

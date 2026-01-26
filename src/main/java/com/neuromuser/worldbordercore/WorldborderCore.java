@@ -36,7 +36,7 @@ public class WorldborderCore implements ModInitializer {
         WorldborderCore.hasInitialScan = hasInitialScan;
     }
 
-    @Override
+        @Override
         public void onInitialize() {
                 WorldScanner.initialize();
 
@@ -60,7 +60,11 @@ public class WorldborderCore implements ModInitializer {
                 });
 
                 ServerTickEvents.END_SERVER_TICK.register(WorldborderCore::onServerTick);
+
+                // Restore persistent scan state if it exists
+                WorldScanner.restorePersistentState();
         }
+
         private static void onServerTick(MinecraftServer server) {
                 ServerWorld overworld = server.getWorld(World.OVERWORLD);
                 if (overworld == null) return;
@@ -73,9 +77,19 @@ public class WorldborderCore implements ModInitializer {
                 WorldScanner.tick(overworld);
 
                 WorldBorderCoreEntity core = WorldBorderCoreManager.getCore(overworld);
-                if (core != null && !WorldScanner.isScanning() && !WorldScanner.isScanned()) {
-                        LOGGER.info("Core exists but no scan data. Starting scan...");
-                        WorldScanner.startScan(overworld);
+
+                if (core != null) {
+                        boolean scanning = WorldScanner.isScanning();
+                        boolean scanned = WorldScanner.isScanned();
+
+                        if (!scanning && !scanned && hasInitialScan) {
+                                WorldborderCore.LOGGER.debug("Core exists with initial scan flag, preserving state.");
+                        }
+
+                        if (!scanning && !scanned && !hasInitialScan) {
+                                WorldborderCore.LOGGER.info("Core exists but no scan data. Starting scan...");
+                                WorldScanner.startScan(overworld);
+                        }
                 }
 
                 if (currentSize != lastBorderSize || currentCenterX != lastCenterX || currentCenterZ != lastCenterZ) {

@@ -19,8 +19,13 @@ public class WorldBorderCoreManager {
         PersistentStateManager manager = world.getPersistentStateManager();
         return manager.getOrCreate(CoreState::fromNbt, CoreState::new, "worldborder_core");
     }
-
     public static WorldBorderCoreEntity spawnCore(ServerWorld world) {
+        WorldBorderCoreEntity existingCore = getCore(world);
+        if (existingCore != null) {
+            WorldborderCore.LOGGER.info("Core already exists, not spawning new one.");
+            return existingCore;
+        }
+
         clearAllCores(world);
 
         WorldBorder border = world.getWorldBorder();
@@ -35,9 +40,11 @@ public class WorldBorderCoreManager {
 
             CoreState state = getState(world);
             state.setCoreUuid(core.getUuid());
-            state.markDirty(); 
+            state.markDirty();
 
-            WorldScanner.startScan(world);
+            if (!WorldScanner.isScanning() && !WorldScanner.isScanned()) {
+                WorldScanner.startScan(world);
+            }
 
             WorldborderCore.LOGGER.info("Spawned World Border Core and started scan.");
         }

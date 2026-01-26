@@ -42,6 +42,8 @@ public class WorldBorderCoreEntity extends MobEntity {
             DataTracker.registerData(WorldBorderCoreEntity.class, TrackedDataHandlerRegistry.INTEGER);
     private static final TrackedData<Integer> COMPLETION_COUNT =
             DataTracker.registerData(WorldBorderCoreEntity.class, TrackedDataHandlerRegistry.INTEGER);
+    private static final TrackedData<Boolean> HAS_SCANNED =
+            DataTracker.registerData(WorldBorderCoreEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
 
     private UUID textDisplayUuid;
     private int ticksSinceLastCollection = 0;
@@ -61,6 +63,7 @@ public class WorldBorderCoreEntity extends MobEntity {
         this.dataTracker.startTracking(REQUIRED_ITEM, "");
         this.dataTracker.startTracking(REQUIRED_COUNT, 0);
         this.dataTracker.startTracking(COMPLETION_COUNT, 0);
+        this.dataTracker.startTracking(HAS_SCANNED, false);
     }
 
     public static DefaultAttributeContainer.Builder createAttributes() {
@@ -76,23 +79,31 @@ public class WorldBorderCoreEntity extends MobEntity {
 
         if (this.getWorld().isClient) return;
 
-        if (!hasRolledFirstRequirement && WorldScanner.isScanned() && !WorldScanner.isScanning()) {
-            rollNewRequirement();
-            hasRolledFirstRequirement = true;
+        if (WorldScanner.isScanned() && !this.dataTracker.get(HAS_SCANNED)) {
+            this.dataTracker.set(HAS_SCANNED, true);
+            if (!hasRolledFirstRequirement) {
+                rollNewRequirement();
+                hasRolledFirstRequirement = true;
+            }
         }
 
-        if (ticksUntilNextRequirement > 0) {
-            if (!WorldScanner.isScanning() && WorldScanner.isScanned()) {
+        if (WorldScanner.isScanning()) {
+            if (ticksUntilNextRequirement > 0) {
+                ticksUntilNextRequirement = 0;
+            }
+        } else {
+            if (ticksUntilNextRequirement > 0) {
                 ticksUntilNextRequirement--;
-                if (ticksUntilNextRequirement == 0) {
-                    rollNewRequirement();
-                }
             }
         }
 
         if (hasRolledFirstRequirement && ticksUntilNextRequirement == 0 && getRequiredCount() > 0) {
             if (this.age % 10 == 0) collectItems();
             if (++ticksSinceLastCollection >= REROLL_TIME) rollNewRequirement();
+        }
+
+        if (hasRolledFirstRequirement && getRequiredCount() == 0 && !WorldScanner.isScanning() && WorldScanner.isScanned()) {
+            rollNewRequirement();
         }
 
         if (this.age % 80 == 0) playAmbientSound();
@@ -115,10 +126,6 @@ public class WorldBorderCoreEntity extends MobEntity {
         }
         else if (!WorldScanner.isScanned()) {
             textDisplay.setCustomName(Text.translatable("worldbordercore.display.waiting"));
-        }
-        else if (ticksUntilNextRequirement > 0) {
-            int secondsLeft = (ticksUntilNextRequirement + 19) / 20;
-            textDisplay.setCustomName(Text.translatable("worldbordercore.display.countdown", secondsLeft));
         }
         else if (getRequiredCount() > 0) {
             Item required = getRequiredItem();
@@ -177,6 +184,9 @@ public class WorldBorderCoreEntity extends MobEntity {
                 this.dataTracker.set(REQUIRED_COUNT, getRequiredCount() - taken);
                 this.ticksSinceLastCollection = 0;
 
+                this.getWorld().playSound(null, this.getBlockPos(),
+                        SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 0.2f, 1.0f + this.random.nextFloat() * 0.2f);
+
                 if (stack.isEmpty()) item.discard();
 
                 ((ServerWorld) this.getWorld()).spawnParticles(
@@ -210,7 +220,22 @@ public class WorldBorderCoreEntity extends MobEntity {
 
     private void onRequirementFulfilled() {
         ServerWorld world = (ServerWorld) this.getWorld();
-        world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.BLOCKS, 1f, 1f);
+
+        world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 4.0f, 0.9f + this.random.nextFloat() * 0.2f);
+        world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.BLOCKS, 2.0f, 1.0f);
+
+        world.spawnParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY() + 1.0, this.getZ(), 10, 0.5, 0.5, 0.5, 0.2);
+        world.spawnParticles(ParticleTypes.FIREWORK, this.getX(), this.getY() + 1.0, this.getZ(), 50, 0.5, 0.5, 0.5, 0.5);
+
+        if (this.random.nextFloat() < 0.1f) {
+            int diamonds = this.random.nextInt(4) + 1;
+            ItemStack diamondStack = new ItemStack(Items.DIAMOND, diamonds);
+            ItemEntity diamondEntity = new ItemEntity(world, this.getX(), this.getY() + 1.0, this.getZ(), diamondStack);
+            diamondEntity.setVelocity(this.random.nextDouble() * 0.5 - 0.25, 0.5, this.random.nextDouble() * 0.5 - 0.25);
+            world.spawnEntity(diamondEntity);
+
+            world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 0.5f, 1.5f);
+        }
 
         WorldBorder border = world.getWorldBorder();
         border.setSize(border.getSize() + 10.0);
@@ -218,10 +243,9 @@ public class WorldBorderCoreEntity extends MobEntity {
         int completions = this.dataTracker.get(COMPLETION_COUNT) + 1;
         this.dataTracker.set(COMPLETION_COUNT, completions);
 
-
         this.dataTracker.set(REQUIRED_ITEM, "");
         this.dataTracker.set(REQUIRED_COUNT, 0);
-        this.ticksUntilNextRequirement = 60;
+        WorldScanner.startScan(world);
     }
 
     private void rollNewRequirement() {
@@ -239,6 +263,14 @@ public class WorldBorderCoreEntity extends MobEntity {
         this.dataTracker.set(REQUIRED_ITEM, itemId);
         this.dataTracker.set(REQUIRED_COUNT, count);
         this.ticksSinceLastCollection = 0;
+
+        this.getWorld().playSound(null, this.getBlockPos(),
+                SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.BLOCKS, 1.0f, 0.8f);
+        ((ServerWorld) this.getWorld()).spawnParticles(
+                ParticleTypes.ENCHANT,
+                this.getX(), this.getY() + 1.0, this.getZ(),
+                15, 0.3, 0.3, 0.3, 0.1
+        );
     }
 
     public Item getRequiredItem() {
@@ -297,6 +329,7 @@ public class WorldBorderCoreEntity extends MobEntity {
         nbt.putInt("CompletionCount", this.dataTracker.get(COMPLETION_COUNT));
         nbt.putBoolean("HasRolledFirst", this.hasRolledFirstRequirement);
         nbt.putInt("TicksUntilNext", this.ticksUntilNextRequirement);
+        nbt.putBoolean("HasScanned", this.dataTracker.get(HAS_SCANNED));
 
         if (this.textDisplayUuid != null) {
             nbt.putUuid("TextDisplayUuid", this.textDisplayUuid);
@@ -320,6 +353,9 @@ public class WorldBorderCoreEntity extends MobEntity {
         }
         if (nbt.contains("TicksUntilNext")) {
             this.ticksUntilNextRequirement = nbt.getInt("TicksUntilNext");
+        }
+        if (nbt.contains("HasScanned")) {
+            this.dataTracker.set(HAS_SCANNED, nbt.getBoolean("HasScanned"));
         }
 
         if (nbt.contains("TextDisplayUuid")) {
