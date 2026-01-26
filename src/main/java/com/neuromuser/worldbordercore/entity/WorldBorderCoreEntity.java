@@ -2,7 +2,6 @@ package com.neuromuser.worldbordercore.entity;
 
 import com.neuromuser.worldbordercore.CoreState;
 import com.neuromuser.worldbordercore.WorldScanner;
-import com.neuromuser.worldbordercore.WorldborderCore;
 import com.neuromuser.worldbordercore.mixin.ArmorStandEntityAccessor;
 import net.minecraft.entity.*;
 import net.minecraft.entity.damage.DamageSource;

@@ -13,6 +13,9 @@
   "worldbordercore.command.spawn.wrong_dimension": "Тільки у звичайному світі",
   "worldbordercore.command.clear.success": "Видалено %s ядер",
   "worldbordercore.command.clear.none": "Ядер не знайдено",
+  "worldbordercore.command.count.wrong_dimension": "Можна робити це лише в звичайному світі!",
+  "worldbordercore.command.count.not_scanned": "Ітем неможливо просканувати!",
+  "worldbordercore.command.count.invalid_item": "Неіснуючий предмет!",
   "worldbordercore.command.count.found": "Знайдено:",
   "worldbordercore.command.count.not_found": "Не знайдено - "
 }
