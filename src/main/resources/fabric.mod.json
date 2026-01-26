@@ -7,10 +7,7 @@
 "authors": [
 "Your Name"
 ],
-"contact": {
-"homepage": "https:
-"sources": "https:
-},
+"contact": {},
 "license": "MIT",
 "icon": "assets/worldborder-core/icon.png",
 "environment": "*",

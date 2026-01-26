@@ -6,28 +6,28 @@
     "minBorderSize": 20,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 192,
+    "baseCount": 96,
     "multiplier": 1.2
   },
   "minecraft:cobblestone": {
     "minBorderSize": 20,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 256,
+    "baseCount": 128,
     "multiplier": 1.3
   },
   "minecraft:dirt": {
     "minBorderSize": 20,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 256,
+    "baseCount": 96,
     "multiplier": 1.3
   },
   "minecraft:sand": {
     "minBorderSize": 20,
     "requiresWorldCheck": true,
     "renewable": false,
-    "baseCount": 128,
+    "baseCount": 96,
     "multiplier": 0.8
   },
   "minecraft:gravel": {
@@ -41,28 +41,28 @@
     "minBorderSize": 25,
     "requiresWorldCheck": true,
     "renewable": false,
-    "baseCount": 128,
+    "baseCount": 96,
     "multiplier": 0.9
   },
   "minecraft:diorite": {
     "minBorderSize": 25,
     "requiresWorldCheck": true,
     "renewable": false,
-    "baseCount": 128,
+    "baseCount": 96,
     "multiplier": 0.9
   },
   "minecraft:granite": {
     "minBorderSize": 25,
     "requiresWorldCheck": true,
     "renewable": false,
-    "baseCount": 128,
+    "baseCount": 96,
     "multiplier": 0.9
   },
   "minecraft:deepslate": {
     "minBorderSize": 40,
     "requiresWorldCheck": true,
     "renewable": false,
-    "baseCount": 128,
+    "baseCount": 96,
     "multiplier": 0.8
   },
   "minecraft:tuff": {
@@ -161,14 +161,14 @@
     "minBorderSize": 30,
     "requiresWorldCheck": false,
     "renewable": false,
-    "baseCount": 64,
+    "baseCount": 24,
     "multiplier": 0.6
   },
   "minecraft:iron_ingot": {
     "minBorderSize": 30,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 48,
+    "baseCount": 32,
     "multiplier": 0.6
   },
   "minecraft:raw_copper": {
@@ -204,23 +204,23 @@
   "minecraft:raw_gold": {
     "minBorderSize": 35,
     "requiresWorldCheck": false,
-    "renewable": true,
-    "baseCount": 32,
+    "renewable": false,
+    "baseCount": 24,
     "multiplier": 0.5
   },
   "minecraft:gold_ingot": {
     "minBorderSize": 35,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 24,
+    "baseCount": 32,
     "multiplier": 0.5
   },
   "minecraft:gold_nugget": {
     "minBorderSize": 35,
     "requiresWorldCheck": false,
-    "renewable": false,
-    "baseCount": 64,
-    "multiplier": 0.6
+    "renewable": true,
+    "baseCount": 256,
+    "multiplier": 0.7
   },
 
   "_ores_rare": "Rare ores",
@@ -265,35 +265,35 @@
     "minBorderSize": 40,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 48,
+    "baseCount": 64,
     "multiplier": 0.8
   },
   "minecraft:acacia_log": {
     "minBorderSize": 40,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 48,
+    "baseCount": 64,
     "multiplier": 0.8
   },
   "minecraft:dark_oak_log": {
     "minBorderSize": 40,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 40,
+    "baseCount": 64,
     "multiplier": 0.8
   },
   "minecraft:mangrove_log": {
     "minBorderSize": 50,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 40,
+    "baseCount": 64,
     "multiplier": 0.7
   },
   "minecraft:cherry_log": {
     "minBorderSize": 50,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 40,
+    "baseCount": 64,
     "multiplier": 0.7
   },
 
@@ -305,20 +305,13 @@
     "baseCount": 192,
     "multiplier": 1.2
   },
-  "minecraft:stick": {
-    "minBorderSize": 30,
-    "requiresWorldCheck": false,
-    "renewable": true,
-    "baseCount": 256,
-    "multiplier": 1.3
-  },
 
   "_crops_basic": "Basic farmable crops",
   "minecraft:wheat": {
     "minBorderSize": 25,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 128,
+    "baseCount": 64,
     "multiplier": 1.1
   },
   "minecraft:wheat_seeds": {
@@ -332,21 +325,21 @@
     "minBorderSize": 25,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 96,
+    "baseCount": 64,
     "multiplier": 1.0
   },
   "minecraft:carrot": {
     "minBorderSize": 25,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 96,
+    "baseCount": 64,
     "multiplier": 1.0
   },
   "minecraft:beetroot": {
     "minBorderSize": 35,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 48,
     "multiplier": 0.9
   },
   "minecraft:beetroot_seeds": {
@@ -362,7 +355,7 @@
     "minBorderSize": 35,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 32,
+    "baseCount": 24,
     "multiplier": 0.8
   },
   "minecraft:melon_slice": {
@@ -404,7 +397,7 @@
     "minBorderSize": 45,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 48,
+    "baseCount": 24,
     "multiplier": 0.7
   },
 
@@ -413,39 +406,39 @@
     "minBorderSize": 30,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 128,
-    "multiplier": 1.2
+    "baseCount": 32,
+    "multiplier": 1.0
   },
   "minecraft:bone": {
     "minBorderSize": 30,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 96,
+    "baseCount": 12,
     "multiplier": 1.0
   },
   "minecraft:string": {
     "minBorderSize": 30,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 96,
+    "baseCount": 15,
     "multiplier": 1.0
   },
   "minecraft:spider_eye": {
     "minBorderSize": 35,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 10,
     "multiplier": 0.8
   },
   "minecraft:gunpowder": {
     "minBorderSize": 35,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 16,
     "multiplier": 0.8
   },
   "minecraft:slime_ball": {
-    "minBorderSize": 40,
+    "minBorderSize": 200,
     "requiresWorldCheck": false,
     "renewable": true,
     "baseCount": 32,
@@ -455,11 +448,11 @@
     "minBorderSize": 50,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 16,
+    "baseCount": 8,
     "multiplier": 0.5
   },
   "minecraft:blaze_rod": {
-    "minBorderSize": 100,
+    "minBorderSize": 600,
     "requiresWorldCheck": false,
     "renewable": true,
     "baseCount": 12,
@@ -468,87 +461,87 @@
 
   "_animal_drops": "Animal drops",
   "minecraft:leather": {
-    "minBorderSize": 30,
+    "minBorderSize": 60,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 24,
     "multiplier": 0.9
   },
   "minecraft:feather": {
-    "minBorderSize": 30,
+    "minBorderSize": 60,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 24,
     "multiplier": 0.9
   },
   "minecraft:chicken": {
-    "minBorderSize": 30,
+    "minBorderSize": 60,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 24,
     "multiplier": 0.9
   },
   "minecraft:cooked_chicken": {
-    "minBorderSize": 35,
+    "minBorderSize": 60,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 48,
+    "baseCount": 24,
     "multiplier": 0.8
   },
   "minecraft:porkchop": {
-    "minBorderSize": 30,
+    "minBorderSize": 60,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 24,
     "multiplier": 0.9
   },
   "minecraft:beef": {
-    "minBorderSize": 30,
+    "minBorderSize": 60,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 24,
     "multiplier": 0.9
   },
   "minecraft:mutton": {
-    "minBorderSize": 30,
+    "minBorderSize": 60,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 24,
     "multiplier": 0.9
   },
   "minecraft:rabbit": {
-    "minBorderSize": 35,
+    "minBorderSize": 60,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 48,
+    "baseCount": 24,
     "multiplier": 0.8
   },
   "minecraft:rabbit_hide": {
-    "minBorderSize": 35,
+    "minBorderSize": 300,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 32,
+    "baseCount": 24,
     "multiplier": 0.7
   },
   "minecraft:rabbit_foot": {
-    "minBorderSize": 40,
+    "minBorderSize": 300,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 16,
+    "baseCount": 8,
     "multiplier": 0.5
   },
   "minecraft:wool": {
-    "minBorderSize": 25,
+    "minBorderSize": 60,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 96,
+    "baseCount": 30,
     "multiplier": 1.0
   },
   "minecraft:ink_sac": {
-    "minBorderSize": 30,
+    "minBorderSize": 60,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 48,
+    "baseCount": 20,
     "multiplier": 0.7
   },
   "minecraft:glow_ink_sac": {
@@ -571,14 +564,14 @@
     "minBorderSize": 35,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 32,
     "multiplier": 0.8
   },
   "minecraft:sea_pickle": {
     "minBorderSize": 50,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 32,
+    "baseCount": 16,
     "multiplier": 0.6
   },
   "minecraft:prismarine_shard": {
@@ -596,59 +589,52 @@
     "multiplier": 0.4
   },
   "minecraft:nautilus_shell": {
-    "minBorderSize": 100,
-    "requiresWorldCheck": true,
+    "minBorderSize": 200,
+    "requiresWorldCheck": false,
     "renewable": true,
     "baseCount": 4,
     "multiplier": 0.3
   },
   "minecraft:heart_of_the_sea": {
-    "minBorderSize": 150,
+    "minBorderSize": 100,
     "requiresWorldCheck": true,
     "renewable": false,
     "baseCount": 1,
     "multiplier": 0.15
   },
   "minecraft:scute": {
-    "minBorderSize": 70,
-    "requiresWorldCheck": true,
+    "minBorderSize": 500,
+    "requiresWorldCheck": false,
     "renewable": true,
     "baseCount": 24,
-    "multiplier": 0.5
-  },
-  "minecraft:turtle_egg": {
-    "minBorderSize": 70,
-    "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 16,
     "multiplier": 0.5
   },
   "minecraft:cod": {
     "minBorderSize": 30,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 16,
     "multiplier": 0.8
   },
   "minecraft:salmon": {
     "minBorderSize": 30,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 16,
     "multiplier": 0.8
   },
   "minecraft:tropical_fish": {
     "minBorderSize": 40,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 32,
+    "baseCount": 6,
     "multiplier": 0.6
   },
   "minecraft:pufferfish": {
     "minBorderSize": 40,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 24,
+    "baseCount": 12,
     "multiplier": 0.5
   },
 
@@ -780,14 +766,14 @@
     "minBorderSize": 150,
     "requiresWorldCheck": false,
     "renewable": false,
-    "baseCount": 4,
+    "baseCount": 1,
     "multiplier": 0.2
   },
   "minecraft:netherite_scrap": {
     "minBorderSize": 150,
     "requiresWorldCheck": true,
     "renewable": false,
-    "baseCount": 3,
+    "baseCount": 1,
     "multiplier": 0.2
   },
   "minecraft:quartz": {
@@ -799,65 +785,58 @@
   },
 
   "_end_items": "End dimension items",
-  "minecraft:end_stone": {
-    "minBorderSize": 120,
-    "requiresWorldCheck": false,
-    "renewable": false,
-    "baseCount": 128,
-    "multiplier": 0.7
-  },
   "minecraft:chorus_fruit": {
-    "minBorderSize": 120,
-    "requiresWorldCheck": true,
+    "minBorderSize": 4000,
+    "requiresWorldCheck": false,
     "renewable": true,
     "baseCount": 48,
     "multiplier": 0.6
   },
   "minecraft:chorus_flower": {
-    "minBorderSize": 120,
-    "requiresWorldCheck": true,
+    "minBorderSize": 4000,
+    "requiresWorldCheck": false,
     "renewable": true,
     "baseCount": 24,
     "multiplier": 0.5
   },
   "minecraft:purpur_block": {
-    "minBorderSize": 130,
+    "minBorderSize": 4000,
     "requiresWorldCheck": false,
     "renewable": false,
     "baseCount": 64,
     "multiplier": 0.6
   },
   "minecraft:shulker_shell": {
-    "minBorderSize": 150,
-    "requiresWorldCheck": true,
+    "minBorderSize": 4000,
+    "requiresWorldCheck": false,
     "renewable": true,
     "baseCount": 4,
     "multiplier": 0.3
   },
   "minecraft:dragon_breath": {
-    "minBorderSize": 200,
-    "requiresWorldCheck": true,
+    "minBorderSize": 4000,
+    "requiresWorldCheck": false,
     "renewable": true,
     "baseCount": 3,
     "multiplier": 0.2
   },
   "minecraft:elytra": {
-    "minBorderSize": 300,
-    "requiresWorldCheck": true,
+    "minBorderSize": 4000,
+    "requiresWorldCheck": false,
     "renewable": false,
     "baseCount": 1,
     "multiplier": 0.1
   },
   "minecraft:dragon_egg": {
-    "minBorderSize": 500,
-    "requiresWorldCheck": true,
+    "minBorderSize": 4000,
+    "requiresWorldCheck": false,
     "renewable": false,
     "baseCount": 1,
     "multiplier": 0.05
   },
   "minecraft:dragon_head": {
-    "minBorderSize": 200,
-    "requiresWorldCheck": true,
+    "minBorderSize": 4000,
+    "requiresWorldCheck": false,
     "renewable": false,
     "baseCount": 1,
     "multiplier": 0.1
@@ -868,70 +847,70 @@
     "minBorderSize": 25,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 48,
+    "baseCount": 16,
     "multiplier": 0.7
   },
   "minecraft:poppy": {
     "minBorderSize": 25,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 48,
+    "baseCount": 16,
     "multiplier": 0.7
   },
   "minecraft:blue_orchid": {
     "minBorderSize": 35,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 24,
+    "baseCount": 16,
     "multiplier": 0.5
   },
   "minecraft:allium": {
     "minBorderSize": 35,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 24,
+    "baseCount": 16,
     "multiplier": 0.5
   },
   "minecraft:azure_bluet": {
     "minBorderSize": 30,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 32,
+    "baseCount": 16,
     "multiplier": 0.6
   },
   "minecraft:tulip": {
     "minBorderSize": 30,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 32,
+    "baseCount": 16,
     "multiplier": 0.6
   },
   "minecraft:oxeye_daisy": {
     "minBorderSize": 30,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 32,
+    "baseCount": 16,
     "multiplier": 0.6
   },
   "minecraft:cornflower": {
     "minBorderSize": 35,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 24,
+    "baseCount": 16,
     "multiplier": 0.5
   },
   "minecraft:lily_of_the_valley": {
     "minBorderSize": 35,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 24,
+    "baseCount": 16,
     "multiplier": 0.5
   },
   "minecraft:sunflower": {
     "minBorderSize": 40,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 16,
+    "baseCount": 64,
     "multiplier": 0.5
   },
   "minecraft:lilac": {
@@ -959,14 +938,14 @@
     "minBorderSize": 60,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 32,
+    "baseCount": 16,
     "multiplier": 0.6
   },
   "minecraft:torchflower": {
     "minBorderSize": 80,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 24,
+    "baseCount": 16,
     "multiplier": 0.5
   },
   "minecraft:torchflower_seeds": {
@@ -996,7 +975,7 @@
     "minBorderSize": 35,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 48,
+    "baseCount": 16,
     "multiplier": 0.7
   },
   "minecraft:vine": {
@@ -1005,13 +984,6 @@
     "renewable": true,
     "baseCount": 64,
     "multiplier": 0.8
-  },
-  "minecraft:fern": {
-    "minBorderSize": 30,
-    "requiresWorldCheck": true,
-    "renewable": false,
-    "baseCount": 32,
-    "multiplier": 0.7
   },
   "minecraft:grass": {
     "minBorderSize": 25,
@@ -1026,7 +998,7 @@
     "minBorderSize": 70,
     "requiresWorldCheck": true,
     "renewable": true,
-    "baseCount": 64,
+    "baseCount": 48,
     "multiplier": 0.7
   },
   "minecraft:moss_carpet": {
@@ -1104,7 +1076,7 @@
   "minecraft:pointed_dripstone": {
     "minBorderSize": 60,
     "requiresWorldCheck": true,
-    "renewable": true,
+    "renewable": false,
     "baseCount": 48,
     "multiplier": 0.6
   },
@@ -1218,7 +1190,7 @@
     "minBorderSize": 40,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 32,
+    "baseCount": 24,
     "multiplier": 0.6
   },
   "minecraft:paper": {
@@ -1236,14 +1208,14 @@
     "multiplier": 0.7
   },
   "minecraft:obsidian": {
-    "minBorderSize": 50,
+    "minBorderSize": 120,
     "requiresWorldCheck": false,
     "renewable": true,
-    "baseCount": 32,
+    "baseCount": 16,
     "multiplier": 0.5
   },
   "minecraft:crying_obsidian": {
-    "minBorderSize": 100,
+    "minBorderSize": 120,
     "requiresWorldCheck": true,
     "renewable": false,
     "baseCount": 12,
@@ -1258,20 +1230,6 @@
     "baseCount": 1,
     "multiplier": 0.1
   },
-  "minecraft:nether_star": {
-    "minBorderSize": 250,
-    "requiresWorldCheck": false,
-    "renewable": true,
-    "baseCount": 1,
-    "multiplier": 0.1
-  },
-  "minecraft:beacon": {
-    "minBorderSize": 300,
-    "requiresWorldCheck": true,
-    "renewable": false,
-    "baseCount": 1,
-    "multiplier": 0.1
-  },
   "minecraft:enchanted_golden_apple": {
     "minBorderSize": 2500,
     "requiresWorldCheck": true,
@@ -1279,7 +1237,6 @@
     "baseCount": 1,
     "multiplier": 0.1
   },
-
   "_loot_items": "Items found in chests",
   "minecraft:name_tag": {
     "minBorderSize": 100,
@@ -1365,66 +1322,6 @@
     "requiresWorldCheck": true,
     "renewable": false,
     "baseCount": 4,
-    "multiplier": 0.2
-  },
-
-  "_special_mob_drops": "Special animal/mob items",
-  "minecraft:goat_horn": {
-    "minBorderSize": 80,
-    "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 8,
-    "multiplier": 0.4
-  },
-  "minecraft:armadillo_scute": {
-    "minBorderSize": 70,
-    "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 24,
-    "multiplier": 0.5
-  },
-  "minecraft:wolf_armor": {
-    "minBorderSize": 90,
-    "requiresWorldCheck": true,
-    "renewable": false,
-    "baseCount": 2,
-    "multiplier": 0.2
-  },
-  "minecraft:sniffer_egg": {
-    "minBorderSize": 100,
-    "requiresWorldCheck": true,
-    "renewable": false,
-    "baseCount": 1,
-    "multiplier": 0.15
-  },
-  "minecraft:trident": {
-    "minBorderSize": 150,
-    "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 1,
-    "multiplier": 0.1
-  },
-
-  "_pottery_sherds": "Pottery sherds from archaeology",
-  "minecraft:pottery_shard_archer": {
-    "minBorderSize": 100,
-    "requiresWorldCheck": true,
-    "renewable": false,
-    "baseCount": 2,
-    "multiplier": 0.2
-  },
-  "minecraft:pottery_shard_arms_up": {
-    "minBorderSize": 100,
-    "requiresWorldCheck": true,
-    "renewable": false,
-    "baseCount": 2,
-    "multiplier": 0.2
-  },
-  "minecraft:pottery_shard_prize": {
-    "minBorderSize": 100,
-    "requiresWorldCheck": true,
-    "renewable": false,
-    "baseCount": 2,
     "multiplier": 0.2
   },
 

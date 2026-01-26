@@ -30,10 +30,10 @@ public class ModMenuIntegration implements ModMenuApi {
         category.addEntry(entryBuilder.startDoubleField(
                         Text.literal("Renewable Multiplier"),
                         config.renewableMultiplier)
-                .setDefaultValue(2.5)
+                .setDefaultValue(1.5)
                 .setMin(1.0)
                 .setMax(20.0)
-                .setTooltip(Text.literal("Farmable items: wood, crops, mob drops (2.5 = 2.5x what exists)"))
+                .setTooltip(Text.literal("Farmable items: wood, crops, mob drops (1.5 = 1.5x what exists)"))
                 .setSaveConsumer(val -> config.renewableMultiplier = val)
                 .build());
 
@@ -50,20 +50,20 @@ public class ModMenuIntegration implements ModMenuApi {
         category.addEntry(entryBuilder.startDoubleField(
                         Text.literal("Progression Multiplier"),
                         config.progressionMultiplier)
-                .setDefaultValue(1.15)
+                .setDefaultValue(1.05)
                 .setMin(1.0)
                 .setMax(3.0)
-                .setTooltip(Text.literal("How much harder each completion (1.15 = 15% harder each time)"))
+                .setTooltip(Text.literal("How much harder each completion (1.05 = 5% harder each time)"))
                 .setSaveConsumer(val -> config.progressionMultiplier = val)
                 .build());
 
         category.addEntry(entryBuilder.startDoubleField(
                         Text.literal("Randomness Variation"),
                         config.randomnessVariation)
-                .setDefaultValue(0.25)
+                .setDefaultValue(0.10)
                 .setMin(0.0)
                 .setMax(0.5)
-                .setTooltip(Text.literal("Random variation in counts (0.25 = ±25% randomness)"))
+                .setTooltip(Text.literal("Random variation in counts (0.1 = ±10% randomness)"))
                 .setSaveConsumer(val -> config.randomnessVariation = val)
                 .build());
 
