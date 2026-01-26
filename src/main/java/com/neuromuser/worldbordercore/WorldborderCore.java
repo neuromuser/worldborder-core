@@ -37,7 +37,7 @@ public class WorldborderCore implements ModInitializer {
                 ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ConfigNetworking.sendToClient(handler.player));
 
                 Registry.register(Registries.ENTITY_TYPE,
-                        new Identifier(MOD_ID, "worldborder_core"),
+                        Identifier.of(MOD_ID, "worldborder_core"),
                         ModEntities.WORLD_BORDER_CORE);
 
                 FabricDefaultAttributeRegistry.register(ModEntities.WORLD_BORDER_CORE,

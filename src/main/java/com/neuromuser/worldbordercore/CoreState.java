@@ -1,6 +1,7 @@
 package com.neuromuser.worldbordercore;
 
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.world.PersistentState;
 
 import java.util.UUID;
@@ -12,6 +13,8 @@ public class CoreState extends PersistentState {
         super();
     }
 
+
+
     public static CoreState fromNbt(NbtCompound nbt) {
         CoreState state = new CoreState();
         if (nbt.contains("CoreUUID")) {
@@ -20,8 +23,14 @@ public class CoreState extends PersistentState {
         return state;
     }
 
+    public static final PersistentState.Type<CoreState> TYPE = new PersistentState.Type<>(
+            CoreState::new,
+            (nbt, registries) -> CoreState.fromNbt(nbt),
+            null
+    );
+
     @Override
-    public NbtCompound writeNbt(NbtCompound nbt) {
+    public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
         if (coreUuid != null) {
             nbt.putUuid("CoreUUID", coreUuid);
         }

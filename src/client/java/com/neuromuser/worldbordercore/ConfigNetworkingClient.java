@@ -1,12 +1,14 @@
 package com.neuromuser.worldbordercore;
+
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.util.Identifier;
+
 public class ConfigNetworkingClient {
-    private static final Identifier SYNC_ID = new Identifier("worldborder-core", "config");
     public static void init() {
-        ClientPlayNetworking.registerGlobalReceiver(SYNC_ID, (client, handler, buf, responseSender) -> {
-        String json = buf.readString();
-        client.execute(() -> ConfigManager.receiveServerConfig(json));
-    });
+        ClientPlayNetworking.registerGlobalReceiver(
+            ConfigNetworking.ConfigPayload.ID,
+            (payload, context) -> context.client().execute(() ->
+                ConfigManager.receiveServerConfig(payload.json())
+            )
+        );
     }
 }

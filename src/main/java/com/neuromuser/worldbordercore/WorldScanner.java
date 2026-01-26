@@ -3,6 +3,7 @@ package com.neuromuser.worldbordercore;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.*;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
@@ -15,6 +16,7 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.registry.Registries;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.Chunk;
+
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -591,7 +593,7 @@ public class WorldScanner {
     }
 
     private static boolean isFood(Item item) {
-        return item.isFood() || item == Items.WHEAT || item == Items.POTATO ||
+        return item.getComponents().contains(DataComponentTypes.FOOD) || item == Items.WHEAT || item == Items.POTATO ||
                 item == Items.CARROT || item == Items.BEETROOT || item == Items.MELON_SLICE ||
                 item == Items.PUMPKIN || item == Items.SWEET_BERRIES || item == Items.GLOW_BERRIES ||
                 item == Items.CHORUS_FRUIT || item == Items.HONEY_BOTTLE;
