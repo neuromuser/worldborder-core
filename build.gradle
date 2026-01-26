@@ -1,5 +1,5 @@
 plugins {
-        id 'fabric-loom' version '1.8.13'
+        id 'net.fabricmc.fabric-loom-remap' version '1.14-SNAPSHOT'
         id 'maven-publish'
 }
 
@@ -35,10 +35,9 @@ dependencies {
         mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
         modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
         modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    modApi "maven.modrinth:cloth-config:${cloth_config_version}"
-    include "maven.modrinth:cloth-config:${cloth_config_version}"
-    modImplementation "maven.modrinth:modmenu:${modmenu_version}"
-    modApi "me.shedaniel.cloth:basic-math:+"
+    modCompileOnly "maven.modrinth:cloth-config:${cloth_config_version}"
+    modCompileOnly "maven.modrinth:modmenu:${modmenu_version}"
+    modCompileOnly "me.shedaniel.cloth:basic-math:+"
 }
 
 processResources {
@@ -47,6 +46,14 @@ processResources {
         filesMatching("fabric.mod.json") {
                 expand "version": project.version
         }
+}
+
+processClientResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -64,4 +71,6 @@ jar {
         from("LICENSE") {
                 rename { "${it}_${project.base.archivesName.get()}" }
         }
+
+
 }

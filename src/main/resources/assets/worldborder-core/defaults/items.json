@@ -1009,8 +1009,8 @@
   "minecraft:fern": {
     "minBorderSize": 30,
     "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 64,
+    "renewable": false,
+    "baseCount": 32,
     "multiplier": 0.7
   },
   "minecraft:grass": {
