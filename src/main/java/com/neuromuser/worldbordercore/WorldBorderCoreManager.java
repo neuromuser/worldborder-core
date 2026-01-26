@@ -11,6 +11,8 @@ import net.minecraft.world.border.WorldBorder;
 import java.util.Objects;
 import java.util.UUID;
 
+import static com.neuromuser.worldbordercore.CoreState.TYPE;
+
 public class WorldBorderCoreManager {
 
     public static void initialize() {
@@ -18,7 +20,7 @@ public class WorldBorderCoreManager {
 
     public static CoreState getState(ServerWorld world) {
         PersistentStateManager manager = world.getPersistentStateManager();
-        return manager.getOrCreate(CoreState::fromNbt, CoreState::new, "worldborder_core");
+        return manager.getOrCreate(TYPE, "worldborder_core");
     }
     public static WorldBorderCoreEntity spawnCore(ServerWorld world) {
         WorldBorderCoreEntity existingCore = getCore(world);

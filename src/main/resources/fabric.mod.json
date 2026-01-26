@@ -4,7 +4,9 @@
   "version": "${version}",
   "name": "Worldborder Core",
   "description": "Mod that adds a world border core that requires resources to upgrade border size.",
-  "authors": ["Neuromuser"],
+  "authors": [
+    "Neuromuser"
+  ],
   "contact": {},
   "license": "MIT",
   "icon": "assets/worldborder-core/icon.png",
@@ -25,8 +27,8 @@
   ],
   "depends": {
     "fabricloader": ">=0.16.0",
-    "minecraft": "~1.20.1",
+    "minecraft": "1.21.1",
     "java": ">=17",
     "fabric-api": "*"
-    }
+  }
 }

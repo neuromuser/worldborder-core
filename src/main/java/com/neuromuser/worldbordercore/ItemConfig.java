@@ -41,7 +41,7 @@ public class ItemConfig {
 
                 try {
                     JsonObject itemJson = json.getAsJsonObject(key);
-                    Item item = Registries.ITEM.get(new Identifier(key));
+                    Item item = Registries.ITEM.get(Identifier.of(key));
 
                     int minBorderSize = itemJson.get("minBorderSize").getAsInt();
                     boolean requiresWorldCheck = itemJson.get("requiresWorldCheck").getAsBoolean();
@@ -130,7 +130,7 @@ public class ItemConfig {
     private static void addFallback(String itemId, int minBorder,
                                     boolean renewable, int baseCount, double multiplier) {
         try {
-            Item item = Registries.ITEM.get(new Identifier(itemId));
+            Item item = Registries.ITEM.get(Identifier.of(itemId));
             itemData.put(item, new ItemUnlockData(
                     item, minBorder, false, renewable, baseCount, multiplier
             ));

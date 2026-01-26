@@ -18,10 +18,10 @@ import net.minecraft.util.math.RotationAxis;
 
 public class WorldBorderCoreRenderer extends MobEntityRenderer<WorldBorderCoreEntity, WorldBorderCoreModel> {
     public static final EntityModelLayer MODEL_LAYER =
-            new EntityModelLayer(new Identifier("worldborder-core", "worldborder_core"), "main");
+            new EntityModelLayer(Identifier.of("worldborder-core", "worldborder_core"), "main");
 
     private static final Identifier TEXTURE =
-            new Identifier("worldborder-core", "textures/entity/worldborder_core.png");
+            Identifier.of("worldborder-core", "textures/entity/worldborder_core.png");
 
     private final ItemRenderer itemRenderer;
 

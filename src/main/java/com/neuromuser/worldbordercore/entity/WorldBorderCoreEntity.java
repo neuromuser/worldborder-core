@@ -31,6 +31,8 @@ import net.minecraft.world.border.WorldBorder;
 import java.util.List;
 import java.util.UUID;
 
+import static com.neuromuser.worldbordercore.CoreState.TYPE;
+
 public class WorldBorderCoreEntity extends MobEntity {
     private static final int REROLL_TIME = 20 * 24000;
     private static final double COLLECTION_RADIUS = 1.2;
@@ -57,12 +59,12 @@ public class WorldBorderCoreEntity extends MobEntity {
     }
 
     @Override
-    protected void initDataTracker() {
-        super.initDataTracker();
-        this.dataTracker.startTracking(REQUIRED_ITEM, "");
-        this.dataTracker.startTracking(REQUIRED_COUNT, 0);
-        this.dataTracker.startTracking(COMPLETION_COUNT, 0);
-        this.dataTracker.startTracking(HAS_SCANNED, false);
+    protected void initDataTracker(DataTracker.Builder builder) {
+        super.initDataTracker(builder);
+        builder.add(REQUIRED_ITEM, "");
+        builder.add(REQUIRED_COUNT, 0);
+        builder.add(COMPLETION_COUNT, 0);
+        builder.add(HAS_SCANNED, false);
     }
 
     public static DefaultAttributeContainer.Builder createAttributes() {
@@ -220,7 +222,7 @@ public class WorldBorderCoreEntity extends MobEntity {
     private void onRequirementFulfilled() {
         ServerWorld world = (ServerWorld) this.getWorld();
 
-        world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 4.0f, 0.9f + this.random.nextFloat() * 0.2f);
+        world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE.value(), SoundCategory.BLOCKS, 2.0f, 1.0f);
         world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.BLOCKS, 2.0f, 1.0f);
 
         world.spawnParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY() + 1.0, this.getZ(), 10, 0.5, 0.5, 0.5, 0.2);
@@ -279,7 +281,7 @@ public class WorldBorderCoreEntity extends MobEntity {
         }
 
         try {
-            return Registries.ITEM.get(new Identifier(itemId));
+            return Registries.ITEM.get(Identifier.of(itemId));
         } catch (Exception e) {
             return Items.AIR;
         }
@@ -311,8 +313,8 @@ public class WorldBorderCoreEntity extends MobEntity {
             ArmorStandEntity textDisplay = getTextDisplay(world);
             if (textDisplay != null) textDisplay.discard();
 
-            CoreState state = world.getPersistentStateManager()
-                    .getOrCreate(CoreState::fromNbt, CoreState::new, "worldborder_core");
+            CoreState state = world.getPersistentStateManager().getOrCreate(TYPE, "worldborder_core");
+
             if (this.getUuid().equals(state.getCoreUuid())) {
                 state.clearCoreUuid();
             }

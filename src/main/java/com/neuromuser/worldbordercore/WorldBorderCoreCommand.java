@@ -91,9 +91,9 @@ public class WorldBorderCoreCommand {
         try {
             Identifier itemId;
             if (itemInput.contains(":")) {
-                itemId = new Identifier(itemInput);
+                itemId = Identifier.of(itemInput);
             } else {
-                itemId = new Identifier("minecraft", itemInput);
+                itemId = Identifier.of("minecraft", itemInput);
             }
 
             Item item = Registries.ITEM.get(itemId);

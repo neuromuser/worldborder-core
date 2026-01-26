@@ -19,7 +19,8 @@ public class ConfigManager {
     public static void load(Path path) {
         try {
             if (Files.exists(path)) {
-                config = GSON.fromJson(Files.readString(path), Config.class);
+                String json = Files.readString(path);
+                config = GSON.fromJson(json, Config.class);
             } else {
                 save(path);
             }
