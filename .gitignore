@@ -22,3 +22,5 @@ classes/
 .vscode/
 
 run/
+
+.idea/
