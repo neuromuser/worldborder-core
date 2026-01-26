@@ -1,7 +1,8 @@
 package com.neuromuser.worldbordercore.entity;
 
 import com.neuromuser.worldbordercore.CoreState;
-import com.neuromuser.worldbordercore.ItemMultiplierSystem;
+import com.neuromuser.worldbordercore.WorldScanner;
+import com.neuromuser.worldbordercore.WorldborderCore;
 import com.neuromuser.worldbordercore.mixin.ArmorStandEntityAccessor;
 import net.minecraft.entity.*;
 import net.minecraft.entity.damage.DamageSource;
@@ -14,6 +15,7 @@ import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
@@ -43,6 +45,8 @@ public class WorldBorderCoreEntity extends MobEntity {
 
     private UUID displayEntityUuid;
     private int ticksSinceLastCollection = 0;
+    private boolean hasRolledFirstRequirement = false;
+    private int ticksUntilNextRequirement = 0;
 
     public WorldBorderCoreEntity(EntityType<? extends MobEntity> type, World world) {
         super(type, world);
@@ -54,8 +58,8 @@ public class WorldBorderCoreEntity extends MobEntity {
     @Override
     protected void initDataTracker() {
         super.initDataTracker();
-        this.dataTracker.startTracking(REQUIRED_ITEM, "minecraft:diamond");
-        this.dataTracker.startTracking(REQUIRED_COUNT, 16);
+        this.dataTracker.startTracking(REQUIRED_ITEM, "");
+        this.dataTracker.startTracking(REQUIRED_COUNT, 0);
         this.dataTracker.startTracking(COMPLETION_COUNT, 0);
     }
 
@@ -72,8 +76,30 @@ public class WorldBorderCoreEntity extends MobEntity {
 
         if (this.getWorld().isClient) return;
 
-        if (this.age % 10 == 0) collectItems();
-        if (++ticksSinceLastCollection >= REROLL_TIME) rollNewRequirement();
+        // Initial requirement roll after first scan
+        if (!hasRolledFirstRequirement && WorldScanner.isScanned() && !WorldScanner.isScanning()) {
+            rollNewRequirement();
+            hasRolledFirstRequirement = true;
+        }
+
+        // Handle delayed requirement generation - only decrement if not scanning
+        if (ticksUntilNextRequirement > 0) {
+            // Wait for scanning to complete before continuing countdown
+            if (!WorldScanner.isScanning() && WorldScanner.isScanned()) {
+                ticksUntilNextRequirement--;
+                if (ticksUntilNextRequirement == 0) {
+                    rollNewRequirement();
+                }
+            }
+            // If scanning, don't decrement - just wait
+        }
+
+        // Only collect items after first requirement has been rolled and no delay is active
+        if (hasRolledFirstRequirement && ticksUntilNextRequirement == 0 && getRequiredCount() > 0) {
+            if (this.age % 10 == 0) collectItems();
+            if (++ticksSinceLastCollection >= REROLL_TIME) rollNewRequirement();
+        }
+
         if (this.age % 80 == 0) playAmbientSound();
         if (this.age > 20 && this.age % 5 == 0) updateDisplay((ServerWorld) this.getWorld());
     }
@@ -100,9 +126,41 @@ public class WorldBorderCoreEntity extends MobEntity {
         }
 
         display.setPosition(this.getX(), this.getY() - 0.8, this.getZ());
-        display.setCustomName(Text.literal("§e" + getRequiredCount() + "x §f" +
-                getRequiredItem().getName().getString()));
-        display.equipStack(EquipmentSlot.HEAD, new ItemStack(getRequiredItem()));
+
+        // Priority 1: Show scanning progress
+        if (WorldScanner.isScanning()) {
+            int progress = WorldScanner.getProgress();
+            display.setCustomName(Text.translatable("worldbordercore.display.generating", progress));
+            display.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.COMPASS));
+        }
+        // Priority 2: Show waiting for scan
+        else if (!WorldScanner.isScanned()) {
+            display.setCustomName(Text.translatable("worldbordercore.display.waiting"));
+            display.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.COMPASS));
+        }
+        // Priority 3: Show countdown (only if scan is complete and delay is active)
+        else if (ticksUntilNextRequirement > 0) {
+            int secondsLeft = (ticksUntilNextRequirement + 19) / 20;
+            display.setCustomName(Text.translatable("worldbordercore.display.countdown", secondsLeft));
+            display.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.CLOCK));
+        }
+        // Priority 4: Show requirement
+        else if (getRequiredCount() > 0) {
+            Item required = getRequiredItem();
+            if (required != null && required != Items.AIR) {
+                display.setCustomName(Text.translatable("worldbordercore.display.requirement",
+                        getRequiredCount(), required.getName().getString()));
+                display.equipStack(EquipmentSlot.HEAD, new ItemStack(required));
+            } else {
+                display.setCustomName(Text.translatable("worldbordercore.display.initializing"));
+                display.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.BARRIER));
+            }
+        }
+        // Priority 5: Initializing (fallback)
+        else {
+            display.setCustomName(Text.translatable("worldbordercore.display.initializing"));
+            display.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.BARRIER));
+        }
     }
 
     private ArmorStandEntity getDisplayEntity(ServerWorld world) {
@@ -112,7 +170,11 @@ public class WorldBorderCoreEntity extends MobEntity {
     }
 
     private void collectItems() {
+        if (!hasRolledFirstRequirement) return;
         if (getRequiredCount() <= 0) return;
+
+        Item requiredItem = getRequiredItem();
+        if (requiredItem == null || requiredItem == Items.AIR) return;
 
         Box box = this.getBoundingBox().expand(COLLECTION_RADIUS);
         List<ItemEntity> items = this.getWorld().getEntitiesByClass(
@@ -123,7 +185,7 @@ public class WorldBorderCoreEntity extends MobEntity {
         for (ItemEntity item : items) {
             ItemStack stack = item.getStack();
 
-            if (stack.isOf(getRequiredItem())) {
+            if (stack.isOf(requiredItem)) {
                 int taken = Math.min(stack.getCount(), getRequiredCount());
 
                 stack.decrement(taken);
@@ -142,7 +204,7 @@ public class WorldBorderCoreEntity extends MobEntity {
                     onRequirementFulfilled();
                     break;
                 }
-            } else if (ItemMultiplierSystem.isRerollItem(stack.getItem()) && stack.getCount() >= 1) {
+            } else if (WorldScanner.isRerollItem(stack.getItem()) && stack.getCount() >= 1) {
                 stack.decrement(1);
                 if (stack.isEmpty()) item.discard();
 
@@ -171,22 +233,45 @@ public class WorldBorderCoreEntity extends MobEntity {
         int completions = this.dataTracker.get(COMPLETION_COUNT) + 1;
         this.dataTracker.set(COMPLETION_COUNT, completions);
 
-        rollNewRequirement();
+        // Clear current requirement and set delay
+        this.dataTracker.set(REQUIRED_ITEM, "");
+        this.dataTracker.set(REQUIRED_COUNT, 0);
+        this.ticksUntilNextRequirement = 60;
     }
 
     private void rollNewRequirement() {
+        // Only roll if scanner is ready
+        if (WorldScanner.isScanning()) {
+            return;
+        }
+
+        if (!WorldScanner.isScanned()) {
+            return;
+        }
+
         int completions = this.dataTracker.get(COMPLETION_COUNT);
 
-        Item item = ItemMultiplierSystem.getRandomItem(this.random);
-        int count = ItemMultiplierSystem.getRequiredCount(item, completions);
+        Item item = WorldScanner.getRandomAvailableItem(this.random);
+        int count = WorldScanner.getRequiredCount(item, completions);
 
-        this.dataTracker.set(REQUIRED_ITEM, Registries.ITEM.getId(item).toString());
+        String itemId = Registries.ITEM.getId(item).toString();
+
+        this.dataTracker.set(REQUIRED_ITEM, itemId);
         this.dataTracker.set(REQUIRED_COUNT, count);
         this.ticksSinceLastCollection = 0;
     }
 
     public Item getRequiredItem() {
-        return Registries.ITEM.get(new Identifier(this.dataTracker.get(REQUIRED_ITEM)));
+        String itemId = this.dataTracker.get(REQUIRED_ITEM);
+        if (itemId == null || itemId.isEmpty()) {
+            return Items.AIR;
+        }
+
+        try {
+            return Registries.ITEM.get(new Identifier(itemId));
+        } catch (Exception e) {
+            return Items.AIR;
+        }
     }
 
     public int getRequiredCount() {
@@ -229,6 +314,8 @@ public class WorldBorderCoreEntity extends MobEntity {
         nbt.putString("RequiredItem", this.dataTracker.get(REQUIRED_ITEM));
         nbt.putInt("RequiredCount", this.dataTracker.get(REQUIRED_COUNT));
         nbt.putInt("CompletionCount", this.dataTracker.get(COMPLETION_COUNT));
+        nbt.putBoolean("HasRolledFirst", this.hasRolledFirstRequirement);
+        nbt.putInt("TicksUntilNext", this.ticksUntilNextRequirement);
 
         if (this.displayEntityUuid != null) {
             nbt.putUuid("DisplayEntityUuid", this.displayEntityUuid);
@@ -246,6 +333,12 @@ public class WorldBorderCoreEntity extends MobEntity {
         }
         if (nbt.contains("CompletionCount")) {
             this.dataTracker.set(COMPLETION_COUNT, nbt.getInt("CompletionCount"));
+        }
+        if (nbt.contains("HasRolledFirst")) {
+            this.hasRolledFirstRequirement = nbt.getBoolean("HasRolledFirst");
+        }
+        if (nbt.contains("TicksUntilNext")) {
+            this.ticksUntilNextRequirement = nbt.getInt("TicksUntilNext");
         }
 
         if (nbt.contains("DisplayEntityUuid")) {

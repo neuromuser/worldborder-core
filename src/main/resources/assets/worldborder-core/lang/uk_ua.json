@@ -1,0 +1,16 @@
+{
+  "entity.worldborder-core.worldborder_core": "Ядро Світової Межі",
+
+  "worldbordercore.display.generating": "Генерація... %s%%",
+  "worldbordercore.display.waiting": "Очікування...",
+  "worldbordercore.display.countdown": "Через %sс",
+  "worldbordercore.display.initializing": "Ініціалізація...",
+  "worldbordercore.display.requirement": "%sx %s",
+
+  "worldbordercore.command.spawn.success": "Ядро створено",
+  "worldbordercore.command.spawn.exists": "Ядро вже існує",
+  "worldbordercore.command.spawn.failed": "Помилка створення",
+  "worldbordercore.command.spawn.wrong_dimension": "Тільки у звичайному світі",
+  "worldbordercore.command.clear.success": "Видалено %s ядер",
+  "worldbordercore.command.clear.none": "Ядер не знайдено"
+}

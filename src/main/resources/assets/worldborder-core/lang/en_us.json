@@ -1,0 +1,16 @@
+{
+  "entity.worldborder-core.worldborder_core": "World Border Core",
+
+  "worldbordercore.display.generating": "Generating... %s%%",
+  "worldbordercore.display.waiting": "Waiting...",
+  "worldbordercore.display.countdown": "Next in %ss",
+  "worldbordercore.display.initializing": "Initializing...",
+  "worldbordercore.display.requirement": "%sx %s",
+
+  "worldbordercore.command.spawn.success": "Core spawned",
+  "worldbordercore.command.spawn.exists": "Core already exists",
+  "worldbordercore.command.spawn.failed": "Failed to spawn",
+  "worldbordercore.command.spawn.wrong_dimension": "Overworld only",
+  "worldbordercore.command.clear.success": "Removed %s core(s)",
+  "worldbordercore.command.clear.none": "No cores found"
+}

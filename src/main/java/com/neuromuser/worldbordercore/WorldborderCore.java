@@ -2,13 +2,18 @@ package com.neuromuser.worldbordercore;
 
 import com.neuromuser.worldbordercore.entity.WorldBorderCoreEntity;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.World;
+import net.minecraft.world.border.WorldBorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,9 +21,16 @@ public class WorldborderCore implements ModInitializer {
         public static final String MOD_ID = "worldborder-core";
         public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
+        private static double lastBorderSize = 0;
+        private static double lastCenterX = 0;
+        private static double lastCenterZ = 0;
+        private static boolean needsRescan = false;
+        private static int rescanDelay = 0;
+        private static boolean hasInitialScan = false;
+
         @Override
         public void onInitialize() {
-                ItemMultiplierSystem.initialize();
+                WorldScanner.initialize();
 
                 ConfigManager.load(FabricLoader.getInstance().getConfigDir().resolve("worldborder-core.json"));
 
@@ -39,6 +51,45 @@ public class WorldborderCore implements ModInitializer {
                         WorldBorderCoreCommand.register(dispatcher, environment);
                 });
 
-                LOGGER.info("World Border Core initialized");
+                ServerTickEvents.END_SERVER_TICK.register(WorldborderCore::onServerTick);
+        }
+
+        private static void onServerTick(MinecraftServer server) {
+                ServerWorld overworld = server.getWorld(World.OVERWORLD);
+                if (overworld == null) return;
+
+                WorldScanner.tick(overworld);
+
+                WorldBorder border = overworld.getWorldBorder();
+                double currentSize = border.getSize();
+                double currentCenterX = border.getCenterX();
+                double currentCenterZ = border.getCenterZ();
+
+                if (!hasInitialScan && !WorldScanner.isScanning() && !WorldScanner.isScanned()) {
+                        WorldBorderCoreEntity core = WorldBorderCoreManager.getCore(overworld);
+                        if (core != null) {
+                                WorldScanner.startScan(overworld);
+                                hasInitialScan = true;
+                        }
+                }
+
+                if (currentSize != lastBorderSize || currentCenterX != lastCenterX || currentCenterZ != lastCenterZ) {
+                        lastBorderSize = currentSize;
+                        lastCenterX = currentCenterX;
+                        lastCenterZ = currentCenterZ;
+
+                        if (currentSize < 59999900 && WorldScanner.isScanned()) {
+                                needsRescan = true;
+                                rescanDelay = 60;
+                        }
+                }
+
+                if (needsRescan && rescanDelay > 0) {
+                        rescanDelay--;
+                        if (rescanDelay == 0) {
+                                WorldScanner.startScan(overworld);
+                                needsRescan = false;
+                        }
+                }
         }
 }
