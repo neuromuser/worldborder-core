@@ -26,26 +26,15 @@ public class WorldborderCore implements ModInitializer {
         private static double lastCenterZ = 0;
         private static boolean needsRescan = false;
         private static int rescanDelay = 0;
-        private static boolean hasInitialScan = false;
 
-    public static boolean isHasInitialScan() {
-        return hasInitialScan;
-    }
-
-    public static void setHasInitialScan(boolean hasInitialScan) {
-        WorldborderCore.hasInitialScan = hasInitialScan;
-    }
-
-        @Override
+    @Override
         public void onInitialize() {
                 WorldScanner.initialize();
 
                 ConfigManager.load(FabricLoader.getInstance().getConfigDir().resolve("worldborder-core.json"));
 
                 ConfigNetworking.init();
-                ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-                        ConfigNetworking.sendToClient(handler.player);
-                });
+                ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ConfigNetworking.sendToClient(handler.player));
 
                 Registry.register(Registries.ENTITY_TYPE,
                         new Identifier(MOD_ID, "worldborder_core"),
@@ -55,9 +44,7 @@ public class WorldborderCore implements ModInitializer {
                         WorldBorderCoreEntity.createAttributes());
 
                 WorldBorderCoreManager.initialize();
-                CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-                        WorldBorderCoreCommand.register(dispatcher, environment);
-                });
+                CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> WorldBorderCoreCommand.register(dispatcher));
 
                 ServerTickEvents.END_SERVER_TICK.register(WorldborderCore::onServerTick);
 
@@ -82,11 +69,9 @@ public class WorldborderCore implements ModInitializer {
                         boolean scanning = WorldScanner.isScanning();
                         boolean scanned = WorldScanner.isScanned();
 
-                        if (!scanning && !scanned && hasInitialScan) {
-                                WorldborderCore.LOGGER.debug("Core exists with initial scan flag, preserving state.");
-                        }
+                    boolean hasInitialScan = false;
 
-                        if (!scanning && !scanned && !hasInitialScan) {
+                    if (!scanning && !scanned && !hasInitialScan) {
                                 WorldborderCore.LOGGER.info("Core exists but no scan data. Starting scan...");
                                 WorldScanner.startScan(overworld);
                         }

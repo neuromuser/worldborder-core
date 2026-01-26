@@ -13,44 +13,43 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.registry.Registries;
-import net.minecraft.world.World;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.Chunk;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WorldScanner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WorldScanner.class);
     private static final Map<Item, Integer> availableResources = new ConcurrentHashMap<>();
     private static final Set<Item> unobtainableItems = new HashSet<>();
     private static final Set<Item> rerollItems = new HashSet<>();
 
     private static boolean isScanning = false;
     private static boolean scanned = false;
-    private static boolean netherScanned = false;
     private static boolean scanningNether = false;
     private static double lastScannedSize = 0;
     private static double lastScannedCenterX = 0;
     private static double lastScannedCenterZ = 0;
 
     private static int currentX, currentY, currentZ;
-    private static int minX, maxX, minY, maxY, minZ, maxZ;
+    private static int maxX;
+    private static int minY;
+    private static int maxY;
+    private static int minZ;
+    private static int maxZ;
     private static int innerMinX, innerMaxX, innerMinZ, innerMaxZ;
     private static boolean hasInnerBounds = false;
     private static long totalBlocks = 0;
     private static long scannedBlocks = 0;
-    private static final int BLOCKS_PER_TICK = 5000; 
-    private static final int CHESTS_PER_TICK = 100;  
+    private static final int BLOCKS_PER_TICK = 5000;
+    private static final int CHESTS_PER_TICK = 100;
 
     private static WorldBorder currentBorder;
-    private static List<BlockPos> chestPositions = new ArrayList<>();
+    private static final List<BlockPos> chestPositions = new ArrayList<>();
     private static int currentChestIndex = 0;
     private static boolean scanningChests = false;
     private static boolean scanningPlayers = false;
-    private static List<ServerPlayerEntity> playersToScan = new ArrayList<>();
+    private static final List<ServerPlayerEntity> playersToScan = new ArrayList<>();
     private static int currentPlayerIndex = 0;
 
     private static final Map<Item, Integer> persistentResources = new ConcurrentHashMap<>();
@@ -60,12 +59,10 @@ public class WorldScanner {
     private static double persistentLastScannedCenterX = 0;
     private static double persistentLastScannedCenterZ = 0;
 
-
     public static void initialize() {
         setupUnobtainableItems();
         setupRerollItems();
         ItemConfig.load();
-        LOGGER.info("WorldScanner initialized with " + ItemConfig.getAllData().size() + " configured items");
     }
 
     private static void setupUnobtainableItems() {
@@ -104,12 +101,8 @@ public class WorldScanner {
 
         boolean isIncrementalScan = (lastScannedSize > 0 && lastScannedSize < size);
 
-        if (isIncrementalScan) {
-            LOGGER.info("Starting INCREMENTAL scan (border expanded from {} to {})", lastScannedSize, size);
-            LOGGER.info("Keeping existing {} item counts, will only scan new area", availableResources.size());
-        } else {
-            LOGGER.info("Starting FULL scan...");
-            savePersistentState();
+        savePersistentState();
+        if (!isIncrementalScan) {
             availableResources.clear();
         }
 
@@ -121,12 +114,11 @@ public class WorldScanner {
         double centerZ = border.getCenterZ();
 
         if (size > 59999900) {
-            LOGGER.warn("World border too large to scan: " + size);
             return;
         }
 
         double radius = size / 2.0;
-        minX = (int) Math.floor(centerX - radius);
+        int minX = (int) Math.floor(centerX - radius);
         maxX = (int) Math.ceil(centerX + radius);
         minZ = (int) Math.floor(centerZ - radius);
         maxZ = (int) Math.ceil(centerZ + radius);
@@ -156,16 +148,15 @@ public class WorldScanner {
         playersToScan.clear();
         currentPlayerIndex = 0;
 
-        long rangeX = (long) (maxX - minX);
-        long rangeY = (long) (maxY - minY);
-        long rangeZ = (long) (maxZ - minZ);
+        long rangeX = maxX - minX;
+        long rangeY = maxY - minY;
+        long rangeZ = maxZ - minZ;
         totalBlocks = rangeX * rangeY * rangeZ;
 
         if (hasInnerBounds) {
-            long innerRangeX = (long) (innerMaxX - innerMinX);
-            long innerRangeY = rangeY;
-            long innerRangeZ = (long) (innerMaxZ - innerMinZ);
-            long skippedBlocks = innerRangeX * innerRangeY * innerRangeZ;
+            long innerRangeX = innerMaxX - innerMinX;
+            long innerRangeZ = innerMaxZ - innerMinZ;
+            long skippedBlocks = innerRangeX * rangeY * innerRangeZ;
             totalBlocks -= skippedBlocks;
         }
 
@@ -175,56 +166,6 @@ public class WorldScanner {
         lastScannedSize = size;
         lastScannedCenterX = centerX;
         lastScannedCenterZ = centerZ;
-
-        LOGGER.info("Scan started: {} blocks to scan", totalBlocks);
-    }
-
-    public static void scanNether(ServerWorld netherWorld) {
-        if (netherScanned) {
-            LOGGER.info("Nether already scanned");
-            return;
-        }
-
-        LOGGER.info("Starting Nether scan...");
-        WorldBorder overworldBorder = netherWorld.getServer().getWorld(World.OVERWORLD).getWorldBorder();
-
-        double overworldSize = overworldBorder.getSize();
-        double netherSize = overworldSize / 8.0;
-        double netherCenterX = overworldBorder.getCenterX() / 8.0;
-        double netherCenterZ = overworldBorder.getCenterZ() / 8.0;
-
-        double radius = netherSize / 2.0;
-        minX = (int) Math.floor(netherCenterX - radius);
-        maxX = (int) Math.ceil(netherCenterX + radius);
-        minZ = (int) Math.floor(netherCenterZ - radius);
-        maxZ = (int) Math.ceil(netherCenterZ + radius);
-        minY = netherWorld.getBottomY();
-        maxY = netherWorld.getTopY();
-
-        hasInnerBounds = false;
-        currentX = minX;
-        currentY = minY;
-        currentZ = minZ;
-        scannedBlocks = 0;
-        currentPhase = 0;
-
-        chestPositions.clear();
-        currentChestIndex = 0;
-        scanningChests = false;
-        scanningPlayers = false;
-        playersToScan.clear();
-        currentPlayerIndex = 0;
-
-        long rangeX = (long) (maxX - minX);
-        long rangeY = (long) (maxY - minY);
-        long rangeZ = (long) (maxZ - minZ);
-        totalBlocks = rangeX * rangeY * rangeZ;
-
-        isScanning = true;
-        scanningNether = true;
-        currentBorder = null;
-
-        LOGGER.info("Nether scan started: {} total blocks to scan", totalBlocks);
     }
 
     public static void tick(ServerWorld world) {
@@ -232,7 +173,7 @@ public class WorldScanner {
 
         if (scanningPlayers) {
             currentPhase = 3;
-            scanPlayerInventories(world);
+            scanPlayerInventories();
             return;
         }
 
@@ -275,7 +216,7 @@ public class WorldScanner {
                             if (isContainerBlock(state)) {
                                 chestPositions.add(pos.toImmutable());
                             }
-                        } catch (Exception e) {
+                        } catch (Exception ignored) {
                         }
                     }
                 }
@@ -292,8 +233,6 @@ public class WorldScanner {
                     currentZ = minZ;
                     currentX++;
                     if (currentX >= maxX) {
-                        LOGGER.info("Block scanning complete. Found {} unique items, {} containers",
-                                availableResources.size(), chestPositions.size());
                         startChestScanning();
                         return;
                     }
@@ -306,7 +245,6 @@ public class WorldScanner {
         scanningChests = true;
         currentChestIndex = 0;
         currentPhase = 2;
-        LOGGER.info("Starting chest scanning phase: {} chests to scan", chestPositions.size());
     }
 
     private static void scanChests(ServerWorld world) {
@@ -324,8 +262,7 @@ public class WorldScanner {
                     if (blockEntity != null) {
                         scanContainer(blockEntity);
                     }
-                } catch (Exception e) {
-                    LOGGER.debug("Failed to scan chest at {}: {}", pos, e.getMessage());
+                } catch (Exception ignored) {
                 }
             }
 
@@ -335,7 +272,6 @@ public class WorldScanner {
 
         if (currentChestIndex >= chestPositions.size()) {
             scanningChests = false;
-            LOGGER.info("Chest scanning complete. Total items in containers added to inventory");
             startPlayerScanning(world);
         }
     }
@@ -351,11 +287,9 @@ public class WorldScanner {
                 playersToScan.add(player);
             }
         }
-
-        LOGGER.info("Starting player inventory scanning: {} players", playersToScan.size());
     }
 
-    private static void scanPlayerInventories(ServerWorld world) {
+    private static void scanPlayerInventories() {
         if (currentPlayerIndex >= playersToScan.size()) {
             finishScan();
             return;
@@ -371,8 +305,7 @@ public class WorldScanner {
             if (enderChest != null) {
                 scanInventory(enderChest);
             }
-        } catch (Exception e) {
-            LOGGER.warn("Failed to scan player {}: {}", player.getName().getString(), e.getMessage());
+        } catch (Exception ignored) {
         }
 
         currentPlayerIndex++;
@@ -410,7 +343,7 @@ public class WorldScanner {
                         availableResources.merge(item, stack.getCount(), Integer::sum);
                     }
                 }
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
     }
@@ -442,23 +375,10 @@ public class WorldScanner {
         currentPhase = 4;
 
         if (scanningNether) {
-            netherScanned = true;
             scanningNether = false;
-            LOGGER.info("Nether scan complete!");
         }
 
         savePersistentState();
-
-        LOGGER.info("World scan complete! Found {} unique items across all sources", availableResources.size());
-
-        LOGGER.info("Top items found in scan:");
-        availableResources.entrySet().stream()
-                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
-                .limit(20)
-                .forEach(entry -> {
-                    String itemId = Registries.ITEM.getId(entry.getKey()).toString();
-                    LOGGER.info("  - {}: {}", itemId, entry.getValue());
-                });
     }
 
     private static Item getItemFromBlock(BlockState state) {
@@ -581,50 +501,31 @@ public class WorldScanner {
         List<Item> eligibleItems = new ArrayList<>();
 
         if (!scanned) {
-            LOGGER.warn("Attempting to get random item before scan is complete!");
             return Items.STONE;
         }
 
         for (Map.Entry<Item, ItemConfig.ItemUnlockData> entry : ItemConfig.getAllData().entrySet()) {
             ItemConfig.ItemUnlockData data = entry.getValue();
 
-            if (borderSize < data.minBorderSize) {
+            if (borderSize < data.minBorderSize()) {
                 continue;
             }
 
-            if (data.requiresWorldCheck) {
-                Integer count = availableResources.get(data.item);
+            if (data.requiresWorldCheck()) {
+                Integer count = availableResources.get(data.item());
                 if (count != null && count > 0) {
-                    eligibleItems.add(data.item);
-                    LOGGER.debug("Item {} is eligible (requiresWorldCheck=true, found {} in world)",
-                            Registries.ITEM.getId(data.item), count);
-                } else {
-                    LOGGER.debug("Item {} skipped (requiresWorldCheck=true, but not found in world)",
-                            Registries.ITEM.getId(data.item));
+                    eligibleItems.add(data.item());
                 }
             } else {
-                eligibleItems.add(data.item);
-                LOGGER.debug("Item {} is eligible (requiresWorldCheck=false)",
-                        Registries.ITEM.getId(data.item));
+                eligibleItems.add(data.item());
             }
         }
 
         if (eligibleItems.isEmpty()) {
-            LOGGER.warn("No eligible items for border size {}! Falling back to stone", borderSize);
             return Items.STONE;
         }
 
-        Item selected = eligibleItems.get(random.nextInt(eligibleItems.size()));
-        LOGGER.info("Selected item: {} from {} eligible items (border size: {})",
-                Registries.ITEM.getId(selected), eligibleItems.size(), borderSize);
-
-        ItemConfig.ItemUnlockData selectedData = ItemConfig.getData(selected);
-        if (selectedData != null && selectedData.requiresWorldCheck) {
-            Integer count = availableResources.get(selected);
-            LOGGER.info("  -> This item requires world check. Count in world: {}", count);
-        }
-
-        return selected;
+        return eligibleItems.get(random.nextInt(eligibleItems.size()));
     }
 
     public static int getRequiredCount(Item item, int completionCount) {
@@ -632,62 +533,40 @@ public class WorldScanner {
         ItemConfig.ItemUnlockData data = ItemConfig.getData(item);
 
         if (data == null) {
-            LOGGER.warn("No config data for item: {}", Registries.ITEM.getId(item));
             return 16;
         }
 
-        String itemId = Registries.ITEM.getId(item).toString();
-        LOGGER.info("=== Calculating requirement for: {} ===", itemId);
-
         int availableInWorld = availableResources.getOrDefault(item, 0);
-        LOGGER.info("  Available in world: {}", availableInWorld);
-        LOGGER.info("  Config - baseCount: {}, multiplier: {}, renewable: {}",
-                data.baseCount, data.multiplier, data.renewable);
 
-        double baseCount = data.baseCount * data.multiplier;
-        LOGGER.info("  Base after item multiplier: {}", baseCount);
+        double baseCount = data.baseCount() * data.multiplier();
 
-        if (data.renewable) {
+        if (data.renewable()) {
             baseCount *= config.renewableMultiplier;
-            LOGGER.info("  Renewable multiplier ({}) applied: {}", config.renewableMultiplier, baseCount);
         } else {
-            LOGGER.info("  Applying non-renewable multiplier: {}", config.nonRenewableMultiplier);
             baseCount *= config.nonRenewableMultiplier;
-            LOGGER.info("  After non-renewable multiplier: {}", baseCount);
 
             if (availableInWorld > 0) {
                 double maxFromWorld = availableInWorld * config.nonRenewableMultiplier;
-                LOGGER.info("  Max from world ({}*{}): {}", availableInWorld, config.nonRenewableMultiplier, maxFromWorld);
                 baseCount = Math.min(baseCount, maxFromWorld);
-                LOGGER.info("  After capping to world availability: {}", baseCount);
-            } else {
-                LOGGER.warn("  WARNING: Non-renewable item with 0 available in world!");
             }
         }
 
         double progression = 1.0 + (completionCount * (config.progressionMultiplier - 1.0));
         double calculatedCount = baseCount * progression;
-        LOGGER.info("  Progression multiplier (completions: {}): {}", completionCount, progression);
-        LOGGER.info("  After progression: {}", calculatedCount);
 
-        if (data.renewable) {
+        if (data.renewable()) {
             double variation = config.randomnessVariation;
             double randomFactor = 1.0 + (Math.random() * variation * 2 - variation);
             calculatedCount *= randomFactor;
-            LOGGER.info("  After randomness ({} variation): {}", variation, calculatedCount);
         }
 
         int finalCount = (int) Math.max(1, Math.round(calculatedCount));
-        LOGGER.info("  Rounded count: {}", finalCount);
 
-        if (!data.renewable && availableInWorld > 0) {
+        if (!data.renewable() && availableInWorld > 0) {
             int maxAllowed = (int) Math.ceil(availableInWorld * config.nonRenewableMultiplier);
-            LOGGER.info("  Non-renewable hard cap: {}", maxAllowed);
             finalCount = Math.min(finalCount, maxAllowed);
-            LOGGER.info("  After hard cap: {}", finalCount);
         }
 
-        int beforeTypeCap = finalCount;
         if (isBuildingMaterial(item)) {
             finalCount = Math.min(finalCount, 512);
         } else if (isFood(item)) {
@@ -699,13 +578,6 @@ public class WorldScanner {
         } else if (isUltraRare(item)) {
             finalCount = Math.min(finalCount, 8);
         }
-
-        if (finalCount != beforeTypeCap) {
-            LOGGER.info("  Item type cap applied: {} -> {}", beforeTypeCap, finalCount);
-        }
-
-        LOGGER.info("  FINAL REQUIREMENT: {}", finalCount);
-        LOGGER.info("===========================================");
 
         return Math.max(1, finalCount);
     }
@@ -752,22 +624,6 @@ public class WorldScanner {
         return availableResources.getOrDefault(item, 0);
     }
 
-    public static void subtractCollectedItem(Item item, int amount) {
-        if (amount <= 0) return;
-
-        int current = availableResources.getOrDefault(item, 0);
-        int newAmount = Math.max(0, current - amount);
-
-        if (newAmount > 0) {
-            availableResources.put(item, newAmount);
-        } else {
-            availableResources.remove(item);
-        }
-
-        LOGGER.debug("Subtracted {} x{} from world count (was: {}, now: {})",
-                Registries.ITEM.getId(item), amount, current, newAmount);
-    }
-
     public static boolean isScanning() {
         return isScanning;
     }
@@ -776,63 +632,28 @@ public class WorldScanner {
         return scanned;
     }
 
-    public static boolean isScanningNether() {
-        return scanningNether;
-    }
-
     public static int getProgress() {
         if (totalBlocks == 0) return 0;
 
         if (currentPhase == 1 || (!scanningChests && !scanningPlayers)) {
-            return (int) ((scannedBlocks / (double) totalBlocks) * 60);
+            return (int) ((scannedBlocks / (double) totalBlocks) * 95);
         }
 
         if (scanningChests || currentPhase == 2) {
             int chestProgress = chestPositions.isEmpty() ? 100 :
                     (int) ((currentChestIndex / (double) chestPositions.size()) * 100);
-            return 60 + (chestProgress * 20 / 100);
+            return 95 + (chestProgress * 20 / 400);
         }
 
-        if (scanningPlayers || currentPhase == 3) {
-            int playerProgress = playersToScan.isEmpty() ? 100 :
-                    (int) ((currentPlayerIndex / (double) playersToScan.size()) * 100);
-            return 80 + (playerProgress * 15 / 100);
-        }
+        int playerProgress = playersToScan.isEmpty() ? 100 :
+                (int) ((currentPlayerIndex / (double) playersToScan.size()) * 100);
+        return 99 + (playerProgress * 15 / 1000);
 
-        return currentPhase >= 4 ? 100 : 95;
     }
 
     public static boolean isRerollItem(Item item) {
         return rerollItems.contains(item);
     }
-
-    public static boolean isNetherScanned() {
-        return netherScanned;
-    }
-
-    public static void reset() {
-        if (isScanned() && lastScannedSize > 0) {
-            WorldborderCore.LOGGER.info("WorldScanner: Preserving scanned state for world re-entry");
-            return;
-        }
-
-        availableResources.clear();
-        scanned = false;
-        isScanning = false;
-        netherScanned = false;
-        scanningNether = false;
-        scanningChests = false;
-        scanningPlayers = false;
-        lastScannedSize = 0;
-        currentBorder = null;
-        chestPositions.clear();
-        currentChestIndex = 0;
-        playersToScan.clear();
-        currentPlayerIndex = 0;
-        currentPhase = 0;
-        WorldborderCore.LOGGER.info("WorldScanner reset");
-    }
-
 
     public static void savePersistentState() {
         if (scanned) {
@@ -842,7 +663,6 @@ public class WorldScanner {
             persistentLastScannedSize = lastScannedSize;
             persistentLastScannedCenterX = lastScannedCenterX;
             persistentLastScannedCenterZ = lastScannedCenterZ;
-            LOGGER.info("Saved persistent scan state for {} items", persistentResources.size());
         }
     }
 
@@ -854,11 +674,7 @@ public class WorldScanner {
             lastScannedSize = persistentLastScannedSize;
             lastScannedCenterX = persistentLastScannedCenterX;
             lastScannedCenterZ = persistentLastScannedCenterZ;
-            LOGGER.info("Restored persistent scan state for {} items", availableResources.size());
         }
     }
 
-    public static boolean hasPersistentScan() {
-        return persistentScanned;
-    }
 }

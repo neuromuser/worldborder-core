@@ -8,6 +8,7 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.border.WorldBorder;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class WorldBorderCoreManager {
@@ -60,7 +61,7 @@ public class WorldBorderCoreManager {
                 removed++;
             } else if (entity instanceof ArmorStandEntity stand) {
                 if (stand.hasCustomName()) {
-                    String name = stand.getCustomName().getString();
+                    String name = Objects.requireNonNull(stand.getCustomName()).getString();
                     if (name.contains("WorldBorderCoreDisplay") ||
                             name.contains("WorldBorderCoreTextDisplay") ||
                             name.contains("WorldBorderCoreItemDisplay") ||

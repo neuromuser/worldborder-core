@@ -16,10 +16,6 @@ public class ConfigManager {
         return hasServerMod && serverConfig != null ? serverConfig : config;
     }
 
-    public static boolean shouldRunServerLogic() {
-        return hasServerMod;
-    }
-
     public static void load(Path path) {
         try {
             if (Files.exists(path)) {

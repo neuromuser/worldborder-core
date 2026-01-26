@@ -20,9 +20,7 @@ public class ModMenuIntegration implements ModMenuApi {
                 .setParentScreen(parent)
                 .setTitle(Text.literal("World Border Core Config"));
 
-        builder.setSavingRunnable(() -> {
-            ConfigManager.save(FabricLoader.getInstance().getConfigDir().resolve("worldborder-core.json"));
-        });
+        builder.setSavingRunnable(() -> ConfigManager.save(FabricLoader.getInstance().getConfigDir().resolve("worldborder-core.json")));
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         var category = builder.getOrCreateCategory(Text.literal("Settings"));

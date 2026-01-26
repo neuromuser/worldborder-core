@@ -16,7 +16,7 @@ import net.minecraft.world.World;
 
 public class WorldBorderCoreCommand {
 
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandManager.RegistrationEnvironment environment) {
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("worldbordercore")
                 .requires(source -> source.hasPermissionLevel(2))
                 .then(CommandManager.literal("spawn")
