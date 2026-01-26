@@ -48,6 +48,8 @@ public class WorldBorderCoreEntity extends MobEntity {
     private int ticksSinceLastCollection = 0;
     private boolean hasRolledFirstRequirement = false;
     private int ticksUntilNextRequirement = 0;
+    // NEW: Track if we're waiting for a scan to complete before rolling next requirement
+    private boolean waitingForScanToRoll = false;
 
     public WorldBorderCoreEntity(EntityType<? extends MobEntity> type, World world) {
         super(type, world);
@@ -86,6 +88,11 @@ public class WorldBorderCoreEntity extends MobEntity {
             }
         }
 
+        if (waitingForScanToRoll && WorldScanner.isScanned() && !WorldScanner.isScanning()) {
+            waitingForScanToRoll = false;
+            rollNewRequirement();
+        }
+
         if (WorldScanner.isScanning()) {
             if (ticksUntilNextRequirement > 0) {
                 ticksUntilNextRequirement = 0;
@@ -96,13 +103,9 @@ public class WorldBorderCoreEntity extends MobEntity {
             }
         }
 
-        if (hasRolledFirstRequirement && ticksUntilNextRequirement == 0 && getRequiredCount() > 0) {
+        if (hasRolledFirstRequirement && !waitingForScanToRoll && getRequiredCount() > 0) {
             if (this.age % 10 == 0) collectItems();
             if (++ticksSinceLastCollection >= REROLL_TIME) rollNewRequirement();
-        }
-
-        if (hasRolledFirstRequirement && getRequiredCount() == 0 && !WorldScanner.isScanning() && WorldScanner.isScanned()) {
-            rollNewRequirement();
         }
 
         if (this.age % 80 == 0) playAmbientSound();
@@ -242,9 +245,13 @@ public class WorldBorderCoreEntity extends MobEntity {
         int completions = this.dataTracker.get(COMPLETION_COUNT) + 1;
         this.dataTracker.set(COMPLETION_COUNT, completions);
 
+        // FIXED: Clear requirement AFTER starting scan, and set flag to wait for scan completion
         this.dataTracker.set(REQUIRED_ITEM, "");
         this.dataTracker.set(REQUIRED_COUNT, 0);
+
+        // Start the scan and flag that we're waiting for it
         WorldScanner.startScan(world);
+        waitingForScanToRoll = true;
     }
 
     private void rollNewRequirement() {
@@ -329,6 +336,7 @@ public class WorldBorderCoreEntity extends MobEntity {
         nbt.putBoolean("HasRolledFirst", this.hasRolledFirstRequirement);
         nbt.putInt("TicksUntilNext", this.ticksUntilNextRequirement);
         nbt.putBoolean("HasScanned", this.dataTracker.get(HAS_SCANNED));
+        nbt.putBoolean("WaitingForScan", this.waitingForScanToRoll); // NEW
 
         if (this.textDisplayUuid != null) {
             nbt.putUuid("TextDisplayUuid", this.textDisplayUuid);
@@ -355,6 +363,9 @@ public class WorldBorderCoreEntity extends MobEntity {
         }
         if (nbt.contains("HasScanned")) {
             this.dataTracker.set(HAS_SCANNED, nbt.getBoolean("HasScanned"));
+        }
+        if (nbt.contains("WaitingForScan")) { // NEW
+            this.waitingForScanToRoll = nbt.getBoolean("WaitingForScan");
         }
 
         if (nbt.contains("TextDisplayUuid")) {
