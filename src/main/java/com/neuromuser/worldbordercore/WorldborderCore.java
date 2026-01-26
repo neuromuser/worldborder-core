@@ -7,8 +7,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
@@ -36,7 +35,7 @@ public class WorldborderCore implements ModInitializer {
                 ConfigNetworking.init();
                 ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ConfigNetworking.sendToClient(handler.player));
 
-                Registry.register(Registries.ENTITY_TYPE,
+                Registry.register(Registry.ENTITY_TYPE,
                         new Identifier(MOD_ID, "worldborder_core"),
                         ModEntities.WORLD_BORDER_CORE);
 

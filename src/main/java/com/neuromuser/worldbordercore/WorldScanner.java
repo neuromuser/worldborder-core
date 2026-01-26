@@ -12,7 +12,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
-import net.minecraft.registry.Registries;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.Chunk;
 
@@ -446,9 +446,6 @@ public class WorldScanner {
         if (state.isOf(Blocks.SPORE_BLOSSOM)) return Items.SPORE_BLOSSOM;
         if (state.isOf(Blocks.CHORUS_FLOWER) || state.isOf(Blocks.CHORUS_PLANT)) return Items.CHORUS_FRUIT;
         if (state.isOf(Blocks.CAVE_VINES) || state.isOf(Blocks.CAVE_VINES_PLANT)) return Items.GLOW_BERRIES;
-        if (state.isOf(Blocks.PINK_PETALS)) return Items.PINK_PETALS;
-        if (state.isOf(Blocks.TORCHFLOWER) || state.isOf(Blocks.TORCHFLOWER_CROP)) return Items.TORCHFLOWER;
-        if (state.isOf(Blocks.PITCHER_CROP) || state.isOf(Blocks.PITCHER_PLANT)) return Items.PITCHER_PLANT;
 
         if (state.isOf(Blocks.OAK_LEAVES)) return Items.OAK_SAPLING;
         if (state.isOf(Blocks.SPRUCE_LEAVES)) return Items.SPRUCE_SAPLING;
@@ -457,7 +454,6 @@ public class WorldScanner {
         if (state.isOf(Blocks.ACACIA_LEAVES)) return Items.ACACIA_SAPLING;
         if (state.isOf(Blocks.DARK_OAK_LEAVES)) return Items.DARK_OAK_SAPLING;
         if (state.isOf(Blocks.MANGROVE_LEAVES)) return Items.MANGROVE_PROPAGULE;
-        if (state.isOf(Blocks.CHERRY_LEAVES)) return Items.CHERRY_SAPLING;
         if (state.isOf(Blocks.AZALEA_LEAVES)) return Items.AZALEA;
         if (state.isOf(Blocks.FLOWERING_AZALEA_LEAVES)) return Items.FLOWERING_AZALEA;
 
@@ -583,7 +579,7 @@ public class WorldScanner {
     }
 
     private static boolean isBuildingMaterial(Item item) {
-        String id = Registries.ITEM.getId(item).toString();
+        String id = Registry.ITEM.getId(item).toString();
         return id.contains("stone") || id.contains("brick") || id.contains("plank") ||
                 id.contains("log") || id.contains("wood") || id.contains("sand") ||
                 id.contains("dirt") || id.contains("clay") || id.contains("concrete") ||

@@ -17,7 +17,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.Registries;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -258,7 +258,7 @@ public class WorldBorderCoreEntity extends MobEntity {
         Item item = WorldScanner.getRandomAvailableItem(this.random, borderSize);
         int count = WorldScanner.getRequiredCount(item, completions);
 
-        String itemId = Registries.ITEM.getId(item).toString();
+        String itemId = Registry.ITEM.getId(item).toString();
         this.dataTracker.set(REQUIRED_ITEM, itemId);
         this.dataTracker.set(REQUIRED_COUNT, count);
         this.ticksSinceLastCollection = 0;
@@ -279,7 +279,7 @@ public class WorldBorderCoreEntity extends MobEntity {
         }
 
         try {
-            return Registries.ITEM.get(new Identifier(itemId));
+            return Registry.ITEM.get(new Identifier(itemId));
         } catch (Exception e) {
             return Items.AIR;
         }

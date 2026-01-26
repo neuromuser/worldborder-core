@@ -8,13 +8,13 @@ import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.MobEntityRenderer;
 import net.minecraft.client.render.entity.model.EntityModelLayer;
 import net.minecraft.client.render.item.ItemRenderer;
-import net.minecraft.client.render.model.json.ModelTransformationMode;
+import net.minecraft.client.render.model.json.ModelTransformation;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.util.math.Vec3f;
 
 public class WorldBorderCoreRenderer extends MobEntityRenderer<WorldBorderCoreEntity, WorldBorderCoreModel> {
     public static final EntityModelLayer MODEL_LAYER =
@@ -59,24 +59,23 @@ public class WorldBorderCoreRenderer extends MobEntityRenderer<WorldBorderCoreEn
 
         float age = entity.age + tickDelta;
 
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(age * 3.0F));
+        matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(age * 3.0F));
 
         float bobOffset = (float) Math.sin(age * 0.1F) * 0.05F;
         matrices.translate(0.0, bobOffset, 0.0);
 
-        matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees((float) Math.sin(age * 0.05F) * 10.0F));
+        matrices.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion((float) Math.sin(age * 0.05F) * 10.0F));
 
         matrices.scale(1.6F, 1.6F, 1.6F);
 
         ItemStack stack = new ItemStack(item);
         this.itemRenderer.renderItem(
                 stack,
-                ModelTransformationMode.GROUND,
+                ModelTransformation.Mode.GROUND,
                 light,
                 OverlayTexture.DEFAULT_UV,
                 matrices,
                 vertexConsumers,
-                entity.getWorld(),
                 entity.getId()
         );
 

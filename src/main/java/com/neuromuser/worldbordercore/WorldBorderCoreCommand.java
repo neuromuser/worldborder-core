@@ -6,7 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.neuromuser.worldbordercore.entity.WorldBorderCoreEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
@@ -46,7 +46,7 @@ public class WorldBorderCoreCommand {
 
         WorldBorderCoreEntity core = WorldBorderCoreManager.spawnCore(world);
         if (core != null) {
-            source.sendFeedback(() -> Text.literal("Spawned World Border Core successfully!"), true);
+            source.sendFeedback(Text.literal("Spawned World Border Core successfully!"), true);
             return 1;
         } else {
             source.sendError(Text.literal("Failed to spawn World Border Core."));
@@ -64,10 +64,10 @@ public class WorldBorderCoreCommand {
 
         int removed = WorldBorderCoreManager.clearAllCores(world);
         if (removed > 0) {
-            source.sendFeedback(() -> Text.literal("Removed " + removed + " entities (cores + displays)."), true);
+            source.sendFeedback(Text.literal("Removed " + removed + " entities (cores + displays)."), true);
             return removed;
         } else {
-            source.sendFeedback(() -> Text.literal("No World Border Cores to remove."), false);
+            source.sendFeedback(Text.literal("No World Border Cores to remove."), false);
             return 0;
         }
     }
@@ -96,7 +96,7 @@ public class WorldBorderCoreCommand {
                 itemId = new Identifier("minecraft", itemInput);
             }
 
-            Item item = Registries.ITEM.get(itemId);
+            Item item = Registry.ITEM.get(itemId);
 
             if (item == Items.AIR) {
                 source.sendError(Text.literal("Invalid item ID: " + itemInput));
@@ -110,11 +110,9 @@ public class WorldBorderCoreCommand {
                 itemName = itemId.toString();
             }
             if (count > 0) {
-                String finalItemName = itemName;
-                source.sendFeedback(() -> Text.literal("Found " + count + " " + finalItemName + " in scanned area."), false);
+                source.sendFeedback(Text.literal("Found " + count + " " + itemName + " in scanned area."), false);
             } else {
-                String finalItemName1 = itemName;
-                source.sendFeedback(() -> Text.literal("No " + finalItemName1 + " found in scanned area."), false);
+                source.sendFeedback(Text.literal("No " + itemName + " found in scanned area."), false);
             }
 
             return count;

@@ -289,13 +289,6 @@
     "baseCount": 64,
     "multiplier": 0.7
   },
-  "minecraft:cherry_log": {
-    "minBorderSize": 50,
-    "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 64,
-    "multiplier": 0.7
-  },
 
   "_wood_processed": "Processed wood items",
   "minecraft:oak_planks": {
@@ -933,42 +926,7 @@
     "renewable": true,
     "baseCount": 16,
     "multiplier": 0.5
-  },
-  "minecraft:pink_petals": {
-    "minBorderSize": 60,
-    "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 16,
-    "multiplier": 0.6
-  },
-  "minecraft:torchflower": {
-    "minBorderSize": 80,
-    "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 16,
-    "multiplier": 0.5
-  },
-  "minecraft:torchflower_seeds": {
-    "minBorderSize": 80,
-    "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 16,
-    "multiplier": 0.5
-  },
-  "minecraft:pitcher_plant": {
-    "minBorderSize": 80,
-    "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 16,
-    "multiplier": 0.5
-  },
-  "minecraft:pitcher_pod": {
-    "minBorderSize": 80,
-    "requiresWorldCheck": true,
-    "renewable": true,
-    "baseCount": 16,
-    "multiplier": 0.5
-  },
+  }
 
   "_vegetation": "Other vegetation",
   "minecraft:lily_pad": {

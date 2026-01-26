@@ -4,8 +4,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -41,7 +41,7 @@ public class ItemConfig {
 
                 try {
                     JsonObject itemJson = json.getAsJsonObject(key);
-                    Item item = Registries.ITEM.get(new Identifier(key));
+                    Item item = Registry.ITEM.get(new Identifier(key));
 
                     int minBorderSize = itemJson.get("minBorderSize").getAsInt();
                     boolean requiresWorldCheck = itemJson.get("requiresWorldCheck").getAsBoolean();
@@ -130,7 +130,7 @@ public class ItemConfig {
     private static void addFallback(String itemId, int minBorder,
                                     boolean renewable, int baseCount, double multiplier) {
         try {
-            Item item = Registries.ITEM.get(new Identifier(itemId));
+            Item item = Registry.ITEM.get(new Identifier(itemId));
             itemData.put(item, new ItemUnlockData(
                     item, minBorder, false, renewable, baseCount, multiplier
             ));
