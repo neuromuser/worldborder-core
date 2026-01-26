@@ -42,8 +42,8 @@ public class WorldScanner {
     private static boolean hasInnerBounds = false;
     private static long totalBlocks = 0;
     private static long scannedBlocks = 0;
-    private static final int BLOCKS_PER_TICK = 5000; // Increased for better performance
-    private static final int CHESTS_PER_TICK = 100;  // Increased
+    private static final int BLOCKS_PER_TICK = 5000; 
+    private static final int CHESTS_PER_TICK = 100;  
 
     private static WorldBorder currentBorder;
     private static List<BlockPos> chestPositions = new ArrayList<>();
@@ -53,8 +53,7 @@ public class WorldScanner {
     private static List<ServerPlayerEntity> playersToScan = new ArrayList<>();
     private static int currentPlayerIndex = 0;
 
-    // Progress tracking for accurate percentages
-    private static int totalPhases = 4; // Block scan, chest scan, player scan, finalize
+    private static int totalPhases = 4; 
     private static int currentPhase = 0;
 
     public static void initialize() {
@@ -105,7 +104,6 @@ public class WorldScanner {
             LOGGER.info("Keeping existing {} item counts, will only scan new area", availableResources.size());
         } else {
             LOGGER.info("Starting FULL scan...");
-            // Only clear on full scans
             availableResources.clear();
         }
 
@@ -256,7 +254,6 @@ public class WorldScanner {
                     int chunkX = currentX >> 4;
                     int chunkZ = currentZ >> 4;
 
-                    // Only process if chunk is loaded
                     if (world.isChunkLoaded(chunkX, chunkZ)) {
                         pos.set(currentX, currentY, currentZ);
 
@@ -268,19 +265,16 @@ public class WorldScanner {
                             if (item != null && !unobtainableItems.contains(item)) {
                                 availableResources.merge(item, 1, Integer::sum);
 
-                                // Also add smelted/processed forms for ores
                                 Item processed = getProcessedForm(item);
                                 if (processed != null && processed != item) {
                                     availableResources.merge(processed, 1, Integer::sum);
                                 }
                             }
 
-                            // Check for containers
                             if (isContainerBlock(state)) {
                                 chestPositions.add(pos.toImmutable());
                             }
                         } catch (Exception e) {
-                            // Skip problematic blocks
                         }
                     }
                 }
@@ -289,7 +283,6 @@ public class WorldScanner {
                 scannedBlocks++;
             }
 
-            // Advance position
             currentY++;
             if (currentY >= maxY) {
                 currentY = minY;
@@ -331,7 +324,6 @@ public class WorldScanner {
                         scanContainer(blockEntity);
                     }
                 } catch (Exception e) {
-                    // Skip problematic chests
                     LOGGER.debug("Failed to scan chest at {}: {}", pos, e.getMessage());
                 }
             }
@@ -371,11 +363,9 @@ public class WorldScanner {
         ServerPlayerEntity player = playersToScan.get(currentPlayerIndex);
 
         try {
-            // Scan main inventory
             PlayerInventory inventory = player.getInventory();
             scanInventory(inventory);
 
-            // Scan ender chest
             Inventory enderChest = player.getEnderChestInventory();
             if (enderChest != null) {
                 scanInventory(enderChest);
@@ -420,7 +410,6 @@ public class WorldScanner {
                     }
                 }
             } catch (Exception e) {
-                // Skip problematic slots
             }
         }
     }
@@ -459,7 +448,6 @@ public class WorldScanner {
 
         LOGGER.info("World scan complete! Found {} unique items across all sources", availableResources.size());
 
-        // Log top 20 most common items for debugging
         LOGGER.info("Top items found in scan:");
         availableResources.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
@@ -471,7 +459,6 @@ public class WorldScanner {
     }
 
     private static Item getItemFromBlock(BlockState state) {
-        // Ore conversions - more comprehensive
         if (state.isOf(Blocks.DIAMOND_ORE) || state.isOf(Blocks.DEEPSLATE_DIAMOND_ORE)) return Items.DIAMOND;
         if (state.isOf(Blocks.IRON_ORE) || state.isOf(Blocks.DEEPSLATE_IRON_ORE)) return Items.RAW_IRON;
         if (state.isOf(Blocks.GOLD_ORE) || state.isOf(Blocks.DEEPSLATE_GOLD_ORE)) return Items.RAW_GOLD;
@@ -488,7 +475,6 @@ public class WorldScanner {
             return Items.AMETHYST_SHARD;
         }
 
-        // Special block conversions
         if (state.isOf(Blocks.GLOWSTONE)) return Items.GLOWSTONE_DUST;
         if (state.isOf(Blocks.SEA_LANTERN)) return Items.PRISMARINE_CRYSTALS;
         if (state.isOf(Blocks.SPONGE)) return Items.SPONGE;
@@ -496,7 +482,6 @@ public class WorldScanner {
         if (state.isOf(Blocks.MELON)) return Items.MELON_SLICE;
         if (state.isOf(Blocks.PUMPKIN) || state.isOf(Blocks.CARVED_PUMPKIN)) return Items.PUMPKIN;
 
-        // Storage blocks to items
         if (state.isOf(Blocks.HAY_BLOCK)) return Items.WHEAT;
         if (state.isOf(Blocks.COAL_BLOCK)) return Items.COAL;
         if (state.isOf(Blocks.IRON_BLOCK)) return Items.IRON_INGOT;
@@ -517,7 +502,6 @@ public class WorldScanner {
         if (state.isOf(Blocks.DRIED_KELP_BLOCK)) return Items.DRIED_KELP;
         if (state.isOf(Blocks.SNOW_BLOCK) || state.isOf(Blocks.SNOW)) return Items.SNOWBALL;
 
-        // Crop blocks
         if (state.isOf(Blocks.WHEAT)) return Items.WHEAT;
         if (state.isOf(Blocks.CARROTS)) return Items.CARROT;
         if (state.isOf(Blocks.POTATOES)) return Items.POTATO;
@@ -543,7 +527,6 @@ public class WorldScanner {
         if (state.isOf(Blocks.TORCHFLOWER) || state.isOf(Blocks.TORCHFLOWER_CROP)) return Items.TORCHFLOWER;
         if (state.isOf(Blocks.PITCHER_CROP) || state.isOf(Blocks.PITCHER_PLANT)) return Items.PITCHER_PLANT;
 
-        // Tree leaves (converted to saplings for tracking renewability)
         if (state.isOf(Blocks.OAK_LEAVES)) return Items.OAK_SAPLING;
         if (state.isOf(Blocks.SPRUCE_LEAVES)) return Items.SPRUCE_SAPLING;
         if (state.isOf(Blocks.BIRCH_LEAVES)) return Items.BIRCH_SAPLING;
@@ -555,31 +538,21 @@ public class WorldScanner {
         if (state.isOf(Blocks.AZALEA_LEAVES)) return Items.AZALEA;
         if (state.isOf(Blocks.FLOWERING_AZALEA_LEAVES)) return Items.FLOWERING_AZALEA;
 
-        // Nylium to fungus
         if (state.isOf(Blocks.CRIMSON_NYLIUM)) return Items.CRIMSON_FUNGUS;
         if (state.isOf(Blocks.WARPED_NYLIUM)) return Items.WARPED_FUNGUS;
 
-        // Default: return block's item form
         return state.getBlock().asItem();
     }
 
-    /**
-     * Returns the processed/smelted form of raw materials.
-     * This ensures that when raw ores are found, both the raw and processed forms are counted.
-     */
     private static Item getProcessedForm(Item rawItem) {
-        // Raw ores to ingots
         if (rawItem == Items.RAW_IRON) return Items.IRON_INGOT;
         if (rawItem == Items.RAW_COPPER) return Items.COPPER_INGOT;
         if (rawItem == Items.RAW_GOLD) return Items.GOLD_INGOT;
 
-        // Ancient debris to netherite scrap
         if (rawItem == Items.ANCIENT_DEBRIS) return Items.NETHERITE_SCRAP;
 
-        // Nether gold to gold ingot
         if (rawItem == Items.GOLD_NUGGET) return Items.GOLD_INGOT;
 
-        // Food items (raw to cooked)
         if (rawItem == Items.BEEF) return Items.COOKED_BEEF;
         if (rawItem == Items.PORKCHOP) return Items.COOKED_PORKCHOP;
         if (rawItem == Items.CHICKEN) return Items.COOKED_CHICKEN;
@@ -590,16 +563,12 @@ public class WorldScanner {
         if (rawItem == Items.POTATO) return Items.BAKED_POTATO;
         if (rawItem == Items.KELP) return Items.DRIED_KELP;
 
-        // Cactus to green dye
         if (rawItem == Items.CACTUS) return Items.GREEN_DYE;
 
-        // Sand to glass
         if (rawItem == Items.SAND) return Items.GLASS;
 
-        // Clay to brick
         if (rawItem == Items.CLAY_BALL) return Items.BRICK;
 
-        // Logs to charcoal (any log can become charcoal)
         if (rawItem.toString().contains("_log")) return Items.CHARCOAL;
 
         return null;
@@ -616,12 +585,10 @@ public class WorldScanner {
         for (Map.Entry<Item, ItemConfig.ItemUnlockData> entry : ItemConfig.getAllData().entrySet()) {
             ItemConfig.ItemUnlockData data = entry.getValue();
 
-            // Check if item is unlocked for current border size
             if (borderSize < data.minBorderSize) {
                 continue;
             }
 
-            // Check if item requires world presence
             if (data.requiresWorldCheck) {
                 Integer count = availableResources.get(data.item);
                 if (count != null && count > 0) {
@@ -633,7 +600,6 @@ public class WorldScanner {
                             Registries.ITEM.getId(data.item));
                 }
             } else {
-                // Items that don't require world check are always eligible if unlocked
                 eligibleItems.add(data.item);
                 LOGGER.debug("Item {} is eligible (requiresWorldCheck=false)",
                         Registries.ITEM.getId(data.item));
@@ -649,7 +615,6 @@ public class WorldScanner {
         LOGGER.info("Selected item: {} from {} eligible items (border size: {})",
                 Registries.ITEM.getId(selected), eligibleItems.size(), borderSize);
 
-        // Extra validation for requiresWorldCheck items
         ItemConfig.ItemUnlockData selectedData = ItemConfig.getData(selected);
         if (selectedData != null && selectedData.requiresWorldCheck) {
             Integer count = availableResources.get(selected);
@@ -671,17 +636,14 @@ public class WorldScanner {
         String itemId = Registries.ITEM.getId(item).toString();
         LOGGER.info("=== Calculating requirement for: {} ===", itemId);
 
-        // Get actual count in world (blocks + chests + inventories)
         int availableInWorld = availableResources.getOrDefault(item, 0);
         LOGGER.info("  Available in world: {}", availableInWorld);
         LOGGER.info("  Config - baseCount: {}, multiplier: {}, renewable: {}",
                 data.baseCount, data.multiplier, data.renewable);
 
-        // Calculate base count
         double baseCount = data.baseCount * data.multiplier;
         LOGGER.info("  Base after item multiplier: {}", baseCount);
 
-        // Apply renewable/non-renewable multiplier from config
         if (data.renewable) {
             baseCount *= config.renewableMultiplier;
             LOGGER.info("  Renewable multiplier ({}) applied: {}", config.renewableMultiplier, baseCount);
@@ -690,7 +652,6 @@ public class WorldScanner {
             baseCount *= config.nonRenewableMultiplier;
             LOGGER.info("  After non-renewable multiplier: {}", baseCount);
 
-            // For non-renewable, cap at configured percentage of available
             if (availableInWorld > 0) {
                 double maxFromWorld = availableInWorld * config.nonRenewableMultiplier;
                 LOGGER.info("  Max from world ({}*{}): {}", availableInWorld, config.nonRenewableMultiplier, maxFromWorld);
@@ -701,13 +662,11 @@ public class WorldScanner {
             }
         }
 
-        // Apply progression
         double progression = 1.0 + (completionCount * (config.progressionMultiplier - 1.0));
         double calculatedCount = baseCount * progression;
         LOGGER.info("  Progression multiplier (completions: {}): {}", completionCount, progression);
         LOGGER.info("  After progression: {}", calculatedCount);
 
-        // Apply randomness only for renewable items
         if (data.renewable) {
             double variation = config.randomnessVariation;
             double randomFactor = 1.0 + (Math.random() * variation * 2 - variation);
@@ -718,7 +677,6 @@ public class WorldScanner {
         int finalCount = (int) Math.max(1, Math.round(calculatedCount));
         LOGGER.info("  Rounded count: {}", finalCount);
 
-        // Hard caps for non-renewable items
         if (!data.renewable && availableInWorld > 0) {
             int maxAllowed = (int) Math.ceil(availableInWorld * config.nonRenewableMultiplier);
             LOGGER.info("  Non-renewable hard cap: {}", maxAllowed);
@@ -726,7 +684,6 @@ public class WorldScanner {
             LOGGER.info("  After hard cap: {}", finalCount);
         }
 
-        // General caps based on item type
         int beforeTypeCap = finalCount;
         if (isBuildingMaterial(item)) {
             finalCount = Math.min(finalCount, 512);
@@ -792,10 +749,6 @@ public class WorldScanner {
         return availableResources.getOrDefault(item, 0);
     }
 
-    /**
-     * Subtracts collected items from the available resources count.
-     * This is called when the core collects items to keep counts accurate.
-     */
     public static void subtractCollectedItem(Item item, int amount) {
         if (amount <= 0) return;
 
@@ -827,26 +780,22 @@ public class WorldScanner {
     public static int getProgress() {
         if (totalBlocks == 0) return 0;
 
-        // Phase 1: Block scanning (0-60%)
         if (currentPhase == 1 || (!scanningChests && !scanningPlayers)) {
             return (int) ((scannedBlocks / (double) totalBlocks) * 60);
         }
 
-        // Phase 2: Chest scanning (60-80%)
         if (scanningChests || currentPhase == 2) {
             int chestProgress = chestPositions.isEmpty() ? 100 :
                     (int) ((currentChestIndex / (double) chestPositions.size()) * 100);
             return 60 + (chestProgress * 20 / 100);
         }
 
-        // Phase 3: Player scanning (80-95%)
         if (scanningPlayers || currentPhase == 3) {
             int playerProgress = playersToScan.isEmpty() ? 100 :
                     (int) ((currentPlayerIndex / (double) playersToScan.size()) * 100);
             return 80 + (playerProgress * 15 / 100);
         }
 
-        // Phase 4: Complete (95-100%)
         return currentPhase >= 4 ? 100 : 95;
     }
 

@@ -46,26 +46,23 @@ public class ItemConfig {
 
         LOGGER.info("Loading item config from: {}", configPath);
 
-        // Create config directory if it doesn't exist
         try {
             Files.createDirectories(configDir);
         } catch (IOException e) {
             LOGGER.error("Failed to create config directory", e);
         }
 
-        // Create default config if it doesn't exist
         if (!Files.exists(configPath)) {
             LOGGER.info("items.json not found, creating default configuration...");
             createDefaultConfig(configPath);
         }
 
-        // Load the config
         try (Reader reader = Files.newBufferedReader(configPath)) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
-            itemData.clear(); // Clear existing data
+            itemData.clear(); 
 
             for (String key : json.keySet()) {
-                if (key.startsWith("_")) continue; // Skip comments
+                if (key.startsWith("_")) continue; 
 
                 try {
                     JsonObject itemJson = json.getAsJsonObject(key);
@@ -96,7 +93,6 @@ public class ItemConfig {
 
             LOGGER.info("Successfully loaded {} items from configuration", itemData.size());
 
-            // If no items were loaded, use fallback
             if (itemData.isEmpty()) {
                 LOGGER.warn("No items loaded from config, using fallback");
                 loadFallbackConfig();
@@ -113,7 +109,6 @@ public class ItemConfig {
 
     private static void createDefaultConfig(Path configPath) {
         try {
-            // Get resource from classpath
             InputStream inputStream = ItemConfig.class.getResourceAsStream(
                     "/assets/worldborder-core/defaults/items.json"
             );
@@ -123,12 +118,10 @@ public class ItemConfig {
                 LOGGER.info("Successfully created default items.json from resources.");
             } else {
                 LOGGER.error("Could not find default config in resources");
-                // Create a minimal config file
                 createMinimalConfig(configPath);
             }
         } catch (IOException e) {
             LOGGER.error("Failed to copy default items.json", e);
-            // Create a minimal config file as last resort
             createMinimalConfig(configPath);
         }
     }
@@ -173,7 +166,6 @@ public class ItemConfig {
         LOGGER.warn("Using fallback configuration with basic items only");
         itemData.clear();
 
-        // Add some basic fallback items to prevent crashes
         addFallback("minecraft:stone", 20, false, true, 64, 0.8);
         addFallback("minecraft:oak_log", 25, false, true, 48, 0.8);
         addFallback("minecraft:diamond", 60, false, false, 8, 0.2);

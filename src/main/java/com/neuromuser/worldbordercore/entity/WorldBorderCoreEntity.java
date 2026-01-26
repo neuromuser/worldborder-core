@@ -100,7 +100,6 @@ public class WorldBorderCoreEntity extends MobEntity {
     }
 
     private void updateDisplay(ServerWorld world) {
-        // Get or create text display (above the core)
         ArmorStandEntity textDisplay = getTextDisplay(world);
         if (textDisplay == null) {
             textDisplay = createTextDisplay(world);
@@ -108,10 +107,8 @@ public class WorldBorderCoreEntity extends MobEntity {
 
         if (textDisplay == null) return;
 
-        // Position text display above the core
         textDisplay.setPosition(this.getX(), this.getY() + 1.2, this.getZ());
 
-        // Update text content based on state
         if (WorldScanner.isScanning()) {
             int progress = WorldScanner.getProgress();
             textDisplay.setCustomName(Text.translatable("worldbordercore.display.generating", progress));
@@ -280,7 +277,6 @@ public class WorldBorderCoreEntity extends MobEntity {
         if (!this.getWorld().isClient) {
             ServerWorld world = (ServerWorld) this.getWorld();
 
-            // Remove text display armor stand
             ArmorStandEntity textDisplay = getTextDisplay(world);
             if (textDisplay != null) textDisplay.discard();
 

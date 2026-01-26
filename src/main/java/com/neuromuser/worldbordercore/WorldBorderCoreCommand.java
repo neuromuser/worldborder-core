@@ -105,7 +105,6 @@ public class WorldBorderCoreCommand {
 
             int count = WorldScanner.getCountForItem(item);
 
-            // Get the item's display name properly
             String itemName = item.getName().getString();
             if (itemName.isEmpty()) {
                 itemName = itemId.toString();

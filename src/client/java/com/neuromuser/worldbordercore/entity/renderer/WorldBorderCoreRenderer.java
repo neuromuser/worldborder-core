@@ -39,17 +39,13 @@ public class WorldBorderCoreRenderer extends MobEntityRenderer<WorldBorderCoreEn
     public void render(WorldBorderCoreEntity entity, float yaw, float tickDelta, MatrixStack matrices,
                        VertexConsumerProvider vertexConsumers, int light) {
 
-        // Check if entity has a required item
         Item requiredItem = entity.getRequiredItem();
         boolean hasRequiredItem = requiredItem != null && requiredItem != Items.AIR;
 
-        // Set model visibility based on whether there's a required item
         this.model.setCoreVisible(!hasRequiredItem);
 
-        // Render the entity model (core + rings)
         super.render(entity, yaw, tickDelta, matrices, vertexConsumers, light);
 
-        // Render the floating item if there is one
         if (hasRequiredItem) {
             renderFloatingItem(entity, requiredItem, tickDelta, matrices, vertexConsumers, light);
         }
@@ -59,26 +55,19 @@ public class WorldBorderCoreRenderer extends MobEntityRenderer<WorldBorderCoreEn
                                     MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light) {
         matrices.push();
 
-        // Position at entity center (Y=0 is center of the core)
         matrices.translate(0.0, 0.25, 0.0);
 
-        // Calculate rotation based on age
         float age = entity.age + tickDelta;
 
-        // Rotate the item smoothly
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(age * 3.0F));
 
-        // Slight bobbing motion
         float bobOffset = (float) Math.sin(age * 0.1F) * 0.05F;
         matrices.translate(0.0, bobOffset, 0.0);
 
-        // Slow pitch rotation for more dynamic movement
         matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees((float) Math.sin(age * 0.05F) * 10.0F));
 
-        // Scale the item larger for better visibility
         matrices.scale(1.6F, 1.6F, 1.6F);
 
-        // Render the item
         ItemStack stack = new ItemStack(item);
         this.itemRenderer.renderItem(
                 stack,

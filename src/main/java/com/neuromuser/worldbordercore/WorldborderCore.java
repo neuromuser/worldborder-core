@@ -70,17 +70,14 @@ public class WorldborderCore implements ModInitializer {
                 double currentCenterX = border.getCenterX();
                 double currentCenterZ = border.getCenterZ();
 
-                // 1. TICK THE SCANNER TO PROGRESS SCANNING
                 WorldScanner.tick(overworld);
 
-                // 2. CHECK IF CORE EXISTS AND NEEDS SCAN
                 WorldBorderCoreEntity core = WorldBorderCoreManager.getCore(overworld);
                 if (core != null && !WorldScanner.isScanning() && !WorldScanner.isScanned()) {
                         LOGGER.info("Core exists but no scan data. Starting scan...");
                         WorldScanner.startScan(overworld);
                 }
 
-                // 3. DETECT BORDER CHANGES (existing code)
                 if (currentSize != lastBorderSize || currentCenterX != lastCenterX || currentCenterZ != lastCenterZ) {
                         lastBorderSize = currentSize;
                         lastCenterX = currentCenterX;
@@ -93,7 +90,6 @@ public class WorldborderCore implements ModInitializer {
                         }
                 }
 
-                // 4. HANDLE DELAYED RESCAN (existing code)
                 if (needsRescan && rescanDelay > 0) {
                         rescanDelay--;
                         if (rescanDelay == 0) {
