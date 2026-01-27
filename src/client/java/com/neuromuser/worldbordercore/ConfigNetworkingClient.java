@@ -1,4 +1,5 @@
 package com.neuromuser.worldbordercore;
+import com.neuromuser.worldbordercore.config.ConfigManager;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.util.Identifier;
 public class ConfigNetworkingClient {

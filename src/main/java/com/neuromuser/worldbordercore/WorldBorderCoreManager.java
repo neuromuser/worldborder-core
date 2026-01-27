@@ -47,7 +47,6 @@ public class WorldBorderCoreManager {
                 WorldScanner.startScan(world);
             }
 
-            WorldborderCore.LOGGER.info("Spawned World Border Core and started scan.");
         }
         return core;
     }
@@ -76,6 +75,8 @@ public class WorldBorderCoreManager {
         CoreState state = getState(world);
         state.clearCoreUuid();
 
+        WorldScanner.reset();
+
         if (removed > 0) {
             WorldborderCore.LOGGER.info("Removed {} entities (cores + displays)", removed);
         }
@@ -95,4 +96,6 @@ public class WorldBorderCoreManager {
         }
         return null;
     }
+
+
 }
