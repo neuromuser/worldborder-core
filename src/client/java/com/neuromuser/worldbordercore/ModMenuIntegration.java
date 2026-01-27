@@ -1,5 +1,7 @@
 package com.neuromuser.worldbordercore;
 
+import com.neuromuser.worldbordercore.config.Config;
+import com.neuromuser.worldbordercore.config.ConfigManager;
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;

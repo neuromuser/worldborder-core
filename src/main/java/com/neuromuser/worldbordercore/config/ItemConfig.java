@@ -1,4 +1,4 @@
-package com.neuromuser.worldbordercore;
+package com.neuromuser.worldbordercore.config;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

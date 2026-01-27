@@ -1,4 +1,4 @@
-package com.neuromuser.worldbordercore;
+package com.neuromuser.worldbordercore.config;
 
 public class Config {
     public double renewableMultiplier = 1.5;

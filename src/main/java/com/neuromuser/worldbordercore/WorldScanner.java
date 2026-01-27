@@ -1,5 +1,10 @@
 package com.neuromuser.worldbordercore;
 
+import com.neuromuser.worldbordercore.config.Config;
+import com.neuromuser.worldbordercore.config.ConfigManager;
+import com.neuromuser.worldbordercore.items.RolledItem;
+import com.neuromuser.worldbordercore.items.RolledItemRegistry;
+import com.neuromuser.worldbordercore.items.WorldRollContext;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.*;
@@ -8,29 +13,29 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
 import net.minecraft.registry.Registries;
+import net.minecraft.world.biome.Biome;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.Chunk;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WorldScanner {
-    private static final Map<Item, Integer> availableResources = new ConcurrentHashMap<>();
+    public static final Map<Item, Integer> availableResources = new ConcurrentHashMap<>();
     private static final Set<Item> unobtainableItems = new HashSet<>();
     private static final Set<Item> rerollItems = new HashSet<>();
-
+    private static final Set<RegistryKey<Biome>> scannedBiomes = new HashSet<>();
+    private static final Set<RegistryKey<Biome>> persistentScannedBiomes = new HashSet<>();
     private static boolean isScanning = false;
     private static boolean scanned = false;
     private static boolean scanningNether = false;
     private static double lastScannedSize = 0;
     private static double lastScannedCenterX = 0;
     private static double lastScannedCenterZ = 0;
-
     private static int currentX, currentY, currentZ;
     private static int maxX;
     private static int minY;
@@ -43,7 +48,6 @@ public class WorldScanner {
     private static long scannedBlocks = 0;
     private static final int BLOCKS_PER_TICK = 5000;
     private static final int CHESTS_PER_TICK = 100;
-
     private static WorldBorder currentBorder;
     private static final List<BlockPos> chestPositions = new ArrayList<>();
     private static int currentChestIndex = 0;
@@ -51,18 +55,18 @@ public class WorldScanner {
     private static boolean scanningPlayers = false;
     private static final List<ServerPlayerEntity> playersToScan = new ArrayList<>();
     private static int currentPlayerIndex = 0;
-
     private static final Map<Item, Integer> persistentResources = new ConcurrentHashMap<>();
     private static int currentPhase = 0;
     private static boolean persistentScanned = false;
     private static double persistentLastScannedSize = 0;
     private static double persistentLastScannedCenterX = 0;
     private static double persistentLastScannedCenterZ = 0;
+    private static ServerWorld currentWorld;
 
     public static void initialize() {
         setupUnobtainableItems();
         setupRerollItems();
-        ItemConfig.load();
+        RolledItemRegistry.registerAll();
     }
 
     private static void setupUnobtainableItems() {
@@ -96,27 +100,23 @@ public class WorldScanner {
     }
 
     public static void startScan(ServerWorld world) {
+        currentWorld = world;
         WorldBorder border = world.getWorldBorder();
         double size = border.getSize();
-
         boolean isIncrementalScan = (lastScannedSize > 0 && lastScannedSize < size);
-
         savePersistentState();
         if (!isIncrementalScan) {
             availableResources.clear();
         }
-
+        scannedBiomes.clear();
         currentBorder = border;
         scanningNether = false;
         currentPhase = 0;
-
         double centerX = border.getCenterX();
         double centerZ = border.getCenterZ();
-
         if (size > 59999900) {
             return;
         }
-
         double radius = size / 2.0;
         int minX = (int) Math.floor(centerX - radius);
         maxX = (int) Math.ceil(centerX + radius);
@@ -169,6 +169,7 @@ public class WorldScanner {
     }
 
     public static void tick(ServerWorld world) {
+        currentWorld = world;
         if (!isScanning) return;
 
         if (scanningPlayers) {
@@ -203,6 +204,10 @@ public class WorldScanner {
                             Chunk chunk = world.getChunk(chunkX, chunkZ);
                             BlockState state = chunk.getBlockState(pos);
 
+                            try {
+                                world.getBiome(pos).getKey().ifPresent(scannedBiomes::add);
+                            } catch (Exception ignored) {}
+
                             Item item = getItemFromBlock(state);
                             if (item != null && !unobtainableItems.contains(item)) {
                                 availableResources.merge(item, 1, Integer::sum);
@@ -234,7 +239,8 @@ public class WorldScanner {
                     currentX++;
                     if (currentX >= maxX) {
                         startChestScanning();
-                        return;
+                        playersToScan.addAll(world.getPlayers());
+                        break;
                     }
                 }
             }
@@ -274,6 +280,10 @@ public class WorldScanner {
             scanningChests = false;
             startPlayerScanning(world);
         }
+    }
+
+    public static Set<RegistryKey<Biome>> getScannedBiomes() {
+        return new HashSet<>(scannedBiomes);
     }
 
     private static void startPlayerScanning(ServerWorld world) {
@@ -497,127 +507,34 @@ public class WorldScanner {
         return null;
     }
 
-    public static Item getRandomAvailableItem(Random random, double borderSize) {
-        List<Item> eligibleItems = new ArrayList<>();
+    public static RolledItem getRandomAvailableRolledItem( net.minecraft.util.math.random.Random random, double borderSize,
+                                                          int completionCount, ServerWorld world) {
+        WorldRollContext context = new WorldRollContext(
+                world,
+                borderSize,
+                completionCount,
+                new HashMap<>(availableResources),
+                getScannedBiomes(),
+                ConfigManager.get(),
+                random
+        );
 
-        if (!scanned) {
-            return Items.STONE;
+        List<RolledItem> eligible = RolledItemRegistry.getItemsForContext(context);
+
+        if (eligible.isEmpty()) {
+            RolledItem stone = RolledItemRegistry.get(Items.STONE);
+            if (stone != null) return stone;
         }
 
-        for (Map.Entry<Item, ItemConfig.ItemUnlockData> entry : ItemConfig.getAllData().entrySet()) {
-            ItemConfig.ItemUnlockData data = entry.getValue();
-
-            if (borderSize < data.minBorderSize()) {
-                continue;
-            }
-
-            if (data.requiresWorldCheck()) {
-                Integer count = availableResources.get(data.item());
-                if (count != null && count > 0) {
-                    eligibleItems.add(data.item());
-                }
-            } else {
-                eligibleItems.add(data.item());
-            }
-        }
-
-        if (eligibleItems.isEmpty()) {
-            return Items.STONE;
-        }
-
-        return eligibleItems.get(random.nextInt(eligibleItems.size()));
-    }
-
-    public static int getRequiredCount(Item item, int completionCount) {
-        Config config = ConfigManager.get();
-        ItemConfig.ItemUnlockData data = ItemConfig.getData(item);
-
-        if (data == null) {
-            return 16;
-        }
-
-        int availableInWorld = availableResources.getOrDefault(item, 0);
-
-        double baseCount = data.baseCount() * data.multiplier();
-
-        if (data.renewable()) {
-            baseCount *= config.renewableMultiplier;
-        } else {
-            baseCount *= config.nonRenewableMultiplier;
-
-            if (availableInWorld > 0) {
-                double maxFromWorld = availableInWorld * config.nonRenewableMultiplier;
-                baseCount = Math.min(baseCount, maxFromWorld);
+        List<RolledItem> weightedList = new ArrayList<>();
+        for (RolledItem item : eligible) {
+            int weight = Math.max(1, (int)(100.0 / item.getRarity()));
+            for (int i = 0; i < weight; i++) {
+                weightedList.add(item);
             }
         }
 
-        double progression = 1.0 + (completionCount * (config.progressionMultiplier - 1.0));
-        double calculatedCount = baseCount * progression;
-
-        if (data.renewable()) {
-            double variation = config.randomnessVariation;
-            double randomFactor = 1.0 + (Math.random() * variation * 2 - variation);
-            calculatedCount *= randomFactor;
-        }
-
-        int finalCount = (int) Math.max(1, Math.round(calculatedCount));
-
-        if (!data.renewable() && availableInWorld > 0) {
-            int maxAllowed = (int) Math.ceil(availableInWorld * config.nonRenewableMultiplier);
-            finalCount = Math.min(finalCount, maxAllowed);
-        }
-
-        if (isBuildingMaterial(item)) {
-            finalCount = Math.min(finalCount, 512);
-        } else if (isFood(item)) {
-            finalCount = Math.min(finalCount, 256);
-        } else if (isValuable(item)) {
-            finalCount = Math.min(finalCount, 128);
-        } else if (isRare(item)) {
-            finalCount = Math.min(finalCount, 64);
-        } else if (isUltraRare(item)) {
-            finalCount = Math.min(finalCount, 8);
-        }
-
-        return Math.max(1, finalCount);
-    }
-
-    private static boolean isBuildingMaterial(Item item) {
-        String id = Registries.ITEM.getId(item).toString();
-        return id.contains("stone") || id.contains("brick") || id.contains("plank") ||
-                id.contains("log") || id.contains("wood") || id.contains("sand") ||
-                id.contains("dirt") || id.contains("clay") || id.contains("concrete") ||
-                id.contains("terracotta") || id.contains("glass") || id.contains("wool");
-    }
-
-    private static boolean isFood(Item item) {
-        return item.isFood() || item == Items.WHEAT || item == Items.POTATO ||
-                item == Items.CARROT || item == Items.BEETROOT || item == Items.MELON_SLICE ||
-                item == Items.PUMPKIN || item == Items.SWEET_BERRIES || item == Items.GLOW_BERRIES ||
-                item == Items.CHORUS_FRUIT || item == Items.HONEY_BOTTLE;
-    }
-
-    private static boolean isValuable(Item item) {
-        return item == Items.DIAMOND || item == Items.EMERALD ||
-                item == Items.GOLD_INGOT || item == Items.RAW_GOLD ||
-                item == Items.IRON_INGOT || item == Items.RAW_IRON ||
-                item == Items.COPPER_INGOT || item == Items.RAW_COPPER ||
-                item == Items.NETHERITE_SCRAP ||
-                item == Items.ANCIENT_DEBRIS || item == Items.QUARTZ || item == Items.LAPIS_LAZULI ||
-                item == Items.REDSTONE || item == Items.COAL || item == Items.OBSIDIAN ||
-                item == Items.GLOWSTONE_DUST || item == Items.ENDER_PEARL || item == Items.BLAZE_ROD;
-    }
-
-    private static boolean isRare(Item item) {
-        return item == Items.NETHERITE_INGOT || item == Items.GHAST_TEAR || item == Items.SHULKER_SHELL ||
-                item == Items.HEART_OF_THE_SEA || item == Items.NAUTILUS_SHELL || item == Items.TOTEM_OF_UNDYING ||
-                item == Items.ENCHANTED_GOLDEN_APPLE || item == Items.DRAGON_BREATH || item == Items.AMETHYST_SHARD ||
-                item == Items.ECHO_SHARD || item == Items.DISC_FRAGMENT_5;
-    }
-
-    private static boolean isUltraRare(Item item) {
-        return item == Items.ELYTRA || item == Items.DRAGON_EGG || item == Items.NETHER_STAR ||
-                item == Items.BEACON || item == Items.TRIDENT;
+        return weightedList.get(random.nextInt(weightedList.size()));
     }
 
     public static int getCountForItem(Item item) {
@@ -648,7 +565,6 @@ public class WorldScanner {
         int playerProgress = playersToScan.isEmpty() ? 100 :
                 (int) ((currentPlayerIndex / (double) playersToScan.size()) * 100);
         return 99 + (playerProgress * 15 / 1000);
-
     }
 
     public static boolean isRerollItem(Item item) {
@@ -677,4 +593,55 @@ public class WorldScanner {
         }
     }
 
+    private static void scanBiomesDuringTick(ServerWorld world, BlockPos pos) {
+        try {
+            world.getBiome(pos).getKey().ifPresent(scannedBiomes::add);
+        } catch (Exception ignored) {}
+    }
+
+    public static void reset() {
+        isScanning = false;
+        scanned = false;
+        scanningNether = false;
+        lastScannedSize = 0;
+        lastScannedCenterX = 0;
+        lastScannedCenterZ = 0;
+        currentBorder = null;
+        availableResources.clear();
+        scannedBiomes.clear();
+
+        currentX = 0;
+        currentY = 0;
+        currentZ = 0;
+        maxX = 0;
+        minY = 0;
+        maxY = 0;
+        minZ = 0;
+        maxZ = 0;
+        innerMinX = 0;
+        innerMaxX = 0;
+        innerMinZ = 0;
+        innerMaxZ = 0;
+        hasInnerBounds = false;
+        totalBlocks = 0;
+        scannedBlocks = 0;
+
+        chestPositions.clear();
+        currentChestIndex = 0;
+        scanningChests = false;
+        scanningPlayers = false;
+        playersToScan.clear();
+        currentPlayerIndex = 0;
+
+        currentPhase = 0;
+        currentWorld = null;
+
+        persistentResources.clear();
+        persistentScanned = false;
+        persistentLastScannedSize = 0;
+        persistentLastScannedCenterX = 0;
+        persistentLastScannedCenterZ = 0;
+
+        WorldborderCore.LOGGER.info("WorldScanner reset complete");
+    }
 }

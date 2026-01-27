@@ -1,5 +1,7 @@
 package com.neuromuser.worldbordercore;
 
+import com.neuromuser.worldbordercore.config.ConfigManager;
+import com.neuromuser.worldbordercore.config.ConfigNetworking;
 import com.neuromuser.worldbordercore.entity.WorldBorderCoreEntity;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;

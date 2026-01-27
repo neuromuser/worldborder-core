@@ -1,0 +1,113 @@
+package com.neuromuser.worldbordercore.items;
+
+import com.neuromuser.worldbordercore.WorldborderCore;
+import com.neuromuser.worldbordercore.config.Config;
+import com.neuromuser.worldbordercore.config.ConfigManager;
+import net.minecraft.item.Item;
+
+public abstract class RolledItem {
+
+    protected final Item minecraftItem;
+    protected final double rarity;
+    protected final int minBorderSize;
+    protected final boolean renewable;
+    protected final boolean requiresWorldScan;
+
+    protected RolledItem(Item item, double rarity, int minBorderSize,
+                         boolean renewable, boolean requiresWorldScan) {
+        this.minecraftItem = item;
+        this.rarity = rarity;
+        this.minBorderSize = minBorderSize;
+        this.renewable = renewable;
+        this.requiresWorldScan = requiresWorldScan;
+    }
+
+    public boolean canRoll(WorldRollContext context) {
+        if (context.getBorderSize() < minBorderSize) {
+            return false;
+        }
+
+        if (requiresWorldScan) {
+            Integer count = context.getScannedResources().get(minecraftItem);
+            if (count == null || count <= 0) {
+                return false;
+            }
+        }
+
+        return checkDependencies(context);
+    }
+
+    protected boolean checkDependencies(WorldRollContext context) {
+        return true;
+    }
+
+    public int calculateRequiredCount(WorldRollContext context) {
+        double baseCount = calculateBaseCount(context);
+        double progressionFactor = calculateProgressionFactor(context);
+        double renewableFactor = calculateRenewableFactor(context);
+        double stageFactor = calculateStageFactor(context);
+
+        double finalCount = baseCount * progressionFactor * renewableFactor * stageFactor;
+
+        if (renewable) {
+            Config config = ConfigManager.get();
+            finalCount *= (1.0 + (Math.random() * config.randomnessVariation * 2 - config.randomnessVariation));
+        }
+
+        finalCount = applyCountCaps(finalCount);
+
+        return Math.max(1, (int) Math.round(finalCount));
+    }
+
+    protected double calculateBaseCount(WorldRollContext context) {
+        double A = 100.0;  // Maximum base count for rarity 0
+        double B = 2.5;    // How quickly count drops with rarity
+        double C = 1.3;    // Curve shape (1.0 = linear, >1.0 = faster drop)
+
+        double baseCount = A / (1.0 + B * Math.pow(rarity, C));
+
+        // Ensure minimum of 1
+        return Math.max(1.0, Math.round(baseCount * 10.0) / 10.0);
+    }
+
+    protected double calculateProgressionFactor(WorldRollContext context) {
+        int completions = context.getCompletionCount();
+        double progressionRate = context.getConfig().progressionMultiplier;
+
+        return 1.0 + (completions * (progressionRate - 1.0));
+    }
+
+    protected double calculateRenewableFactor(WorldRollContext context) {
+        if (renewable) {
+            return context.getConfig().renewableMultiplier;
+        } else {
+            Integer available = context.getScannedResources().get(minecraftItem);
+            if (available == null || available <= 0) {
+                return 1.0;
+            }
+
+            double multiplier = context.getConfig().nonRenewableMultiplier;
+            double maxFromWorld = available * multiplier;
+
+            return Math.min(1.0, maxFromWorld / 64.0);
+        }
+    }
+
+    protected double calculateStageFactor(WorldRollContext context) {
+        return 1.0;
+    }
+
+    protected double applyCountCaps(double count) {
+        return count;
+    }
+
+    public Item getMinecraftItem() { return minecraftItem; }
+    public double getRarity() { return rarity; }
+    public int getMinBorderSize() { return minBorderSize; }
+    public boolean isRenewable() { return renewable; }
+    public boolean requiresWorldScan() { return requiresWorldScan; }
+
+    public String getDisplayName() {
+        return minecraftItem.getName().getString();
+    }
+}
