@@ -1,12 +1,10 @@
 package com.neuromuser.worldbordercore;
 
-import com.neuromuser.worldbordercore.config.Config;
 import com.neuromuser.worldbordercore.config.ConfigManager;
 import com.neuromuser.worldbordercore.items.RolledItem;
 import com.neuromuser.worldbordercore.items.RolledItemRegistry;
 import com.neuromuser.worldbordercore.items.WorldRollContext;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.*;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -45,14 +43,13 @@ public class WorldScanner {
     private static int innerMinX, innerMaxX, innerMinZ, innerMaxZ;
     private static boolean hasInnerBounds = false;
     private static long totalBlocks = 0;
-    private static long scannedBlocks = 0;
     private static final int BLOCKS_PER_TICK = 5000;
     private static final int CHESTS_PER_TICK = 100;
     private static WorldBorder currentBorder;
     private static final List<BlockPos> chestPositions = new ArrayList<>();
     private static int currentChestIndex = 0;
-    private static boolean scanningChests = false;
-    private static boolean scanningPlayers = false;
+    private static boolean scanningChests = true;
+    private static boolean scanningPlayers = true;
     private static final List<ServerPlayerEntity> playersToScan = new ArrayList<>();
     private static int currentPlayerIndex = 0;
     private static final Map<Item, Integer> persistentResources = new ConcurrentHashMap<>();
@@ -62,7 +59,7 @@ public class WorldScanner {
     private static double persistentLastScannedCenterX = 0;
     private static double persistentLastScannedCenterZ = 0;
     private static ServerWorld currentWorld;
-
+    private static int scannedBlocks = 0;
     private static long overworldTotalBlocks = 0;
     private static long overworldScannedBlocks = 0;
     private static long netherTotalBlocks = 0;
@@ -150,7 +147,6 @@ public class WorldScanner {
         scannedBlocks = 0;
         overworldScannedBlocks = 0;
         netherScannedBlocks = 0;
-
         chestPositions.clear();
         currentChestIndex = 0;
         scanningChests = false;
@@ -547,35 +543,24 @@ public class WorldScanner {
 
         savePersistentState();
     }
-
-    public static RolledItem getRandomAvailableRolledItem( net.minecraft.util.math.random.Random random, double borderSize,
-                                                           int completionCount, ServerWorld world) {
+    public static RolledItem getRandomAvailableRolledItem(net.minecraft.util.math.random.Random random, double borderSize,
+                                                          int completionCount, ServerWorld world) {
         WorldRollContext context = new WorldRollContext(
-                world,
-                borderSize,
-                completionCount,
-                new HashMap<>(availableResources),
-                getScannedBiomes(),
-                ConfigManager.get(),
-                random
+                world, borderSize, completionCount, new HashMap<>(availableResources),
+                getScannedBiomes(), ConfigManager.get(), random
         );
-
         List<RolledItem> eligible = RolledItemRegistry.getItemsForContext(context);
 
+        eligible.removeIf(item -> {
+            Integer count = availableResources.get(item.getMinecraftItem());
+            return count == null || count <= 5;
+        });
+
         if (eligible.isEmpty()) {
-            RolledItem stone = RolledItemRegistry.get(Items.STONE);
-            if (stone != null) return stone;
+            return RolledItemRegistry.get(Items.COBBLESTONE);
         }
 
-        List<RolledItem> weightedList = new ArrayList<>();
-        for (RolledItem item : eligible) {
-            int weight = Math.max(1, (int)(100.0 / item.getRarity()));
-            for (int i = 0; i < weight; i++) {
-                weightedList.add(item);
-            }
-        }
-
-        return weightedList.get(random.nextInt(weightedList.size()));
+        return eligible.get(random.nextInt(eligible.size()));
     }
 
     public static int getCountForItem(Item item) {
@@ -624,26 +609,16 @@ public class WorldScanner {
     }
 
     public static String getScanDebugInfo() {
-        StringBuilder info = new StringBuilder();
-        info.append("Scanning: ").append(isScanning).append("\n");
-        info.append("Scanned: ").append(scanned).append("\n");
-        info.append("Phase: ").append(currentPhase).append("\n");
-        info.append("Scanning Nether: ").append(scanningNether).append("\n");
-        info.append("Scanning Chests: ").append(scanningChests).append("\n");
-        info.append("Scanning Players: ").append(scanningPlayers).append("\n");
-        info.append("Overworld blocks: ").append(overworldScannedBlocks).append("/").append(overworldTotalBlocks).append("\n");
-        info.append("Nether blocks: ").append(netherScannedBlocks).append("/").append(netherTotalBlocks).append("\n");
-        info.append("Total resources found: ").append(availableResources.size()).append("\n");
-        info.append("Total biomes found: ").append(scannedBiomes.size()).append("\n");
-        return info.toString();
-    }
-
-    public static int getCurrentPhase() {
-        return currentPhase;
-    }
-
-    public static boolean isScanningNether() {
-        return scanningNether;
+        return "Scanning: " + isScanning + "\n" +
+                "Scanned: " + scanned + "\n" +
+                "Phase: " + currentPhase + "\n" +
+                "Scanning Nether: " + scanningNether + "\n" +
+                "Scanning Chests: " + scanningChests + "\n" +
+                "Scanning Players: " + scanningPlayers + "\n" +
+                "Overworld blocks: " + overworldScannedBlocks + "/" + overworldTotalBlocks + "\n" +
+                "Nether blocks: " + netherScannedBlocks + "/" + netherTotalBlocks + "\n" +
+                "Total resources found: " + availableResources.size() + "\n" +
+                "Total biomes found: " + scannedBiomes.size() + "\n";
     }
 
     public static void savePersistentState() {

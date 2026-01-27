@@ -83,18 +83,6 @@ public class ItemBuilder {
         return this;
     }
 
-    public ItemBuilder requireItems(Item... items) {
-        for (Item item : items) {
-            dependencies.add(ctx -> ctx.hasItem(item));
-        }
-        return this;
-    }
-
-    public ItemBuilder requireBiome(RegistryKey<Biome> biome) {
-        rollConditions.add(ctx -> ctx.hasBiome(biome));
-        return this;
-    }
-
     @SafeVarargs
     public final ItemBuilder requireAnyBiome(RegistryKey<Biome>... biomes) {
         rollConditions.add(ctx -> {
@@ -111,23 +99,8 @@ public class ItemBuilder {
         return this;
     }
 
-    public ItemBuilder requireCompletions(int min) {
-        rollConditions.add(ctx -> ctx.getCompletionCount() >= min);
-        return this;
-    }
-
-    public ItemBuilder requireBorderSize(double min) {
-        rollConditions.add(ctx -> ctx.getBorderSize() >= min);
-        return this;
-    }
-
     public ItemBuilder requireCustom(Predicate<WorldRollContext> predicate) {
         dependencies.add(predicate);
-        return this;
-    }
-
-    public ItemBuilder whenCustom(Predicate<WorldRollContext> predicate) {
-        rollConditions.add(predicate);
         return this;
     }
 

@@ -50,10 +50,10 @@ public class ModMenuIntegration implements ModMenuApi {
         category.addEntry(entryBuilder.startDoubleField(
                         Text.literal("Progression Multiplier"),
                         config.progressionMultiplier)
-                .setDefaultValue(1.05)
+                .setDefaultValue(1.1)
                 .setMin(1.0)
                 .setMax(3.0)
-                .setTooltip(Text.literal("How much harder each completion (1.05 = 5% harder each time)"))
+                .setTooltip(Text.literal("How much harder each completion (1.1 = 10% harder each time)"))
                 .setSaveConsumer(val -> config.progressionMultiplier = val)
                 .build());
 

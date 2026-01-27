@@ -1,6 +1,5 @@
 package com.neuromuser.worldbordercore.items;
 
-import com.neuromuser.worldbordercore.WorldborderCore;
 import com.neuromuser.worldbordercore.config.Config;
 import com.neuromuser.worldbordercore.config.ConfigManager;
 import net.minecraft.item.Item;
@@ -29,9 +28,11 @@ public abstract class RolledItem {
             return false;
         }
 
+
+
         if (requiresWorldScan) {
             Integer count = context.getScannedResources().get(minecraftItem);
-            if (count == null || count <= 0) {
+            if (count == null || count <= 5) {
                 return false;
             }
         }
@@ -44,10 +45,10 @@ public abstract class RolledItem {
     }
 
     public int calculateRequiredCount(WorldRollContext context) {
-        double baseCount = calculateBaseCount(context);
+        double baseCount = calculateBaseCount();
         double progressionFactor = calculateProgressionFactor(context);
         double renewableFactor = calculateRenewableFactor(context);
-        double stageFactor = calculateStageFactor(context);
+        double stageFactor = calculateStageFactor();
 
         double finalCount = baseCount * progressionFactor * renewableFactor * stageFactor;
 
@@ -61,10 +62,10 @@ public abstract class RolledItem {
         return Math.max(1, (int) Math.round(finalCount));
     }
 
-    protected double calculateBaseCount(WorldRollContext context) {
+    protected double calculateBaseCount() {
         double A = 100.0;
         double B = 2.5;
-        double C = 1.3;
+        double C = 1.8;
         double baseCount = A / (1.0 + B * Math.pow(rarity, C));
         return Math.max(1.0, Math.round(baseCount * 10.0) / 10.0) * countMultiplier;
     }
@@ -92,7 +93,7 @@ public abstract class RolledItem {
         }
     }
 
-    protected double calculateStageFactor(WorldRollContext context) {
+    protected double calculateStageFactor() {
         return 1.0;
     }
 
@@ -101,14 +102,6 @@ public abstract class RolledItem {
     }
 
     public Item getMinecraftItem() { return minecraftItem; }
-    public double getRarity() { return rarity; }
-    public int getMinBorderSize() { return minBorderSize; }
-    public boolean isRenewable() { return renewable; }
-    public boolean requiresWorldScan() { return requiresWorldScan; }
-
-    public String getDisplayName() {
-        return minecraftItem.getName().getString();
-    }
 
     protected abstract int calculateMaxCraftableCount(WorldRollContext context);
 }

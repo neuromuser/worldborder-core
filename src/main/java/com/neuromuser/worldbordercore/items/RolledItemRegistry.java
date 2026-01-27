@@ -1,12 +1,11 @@
 package com.neuromuser.worldbordercore.items;
 
-import com.neuromuser.worldbordercore.config.Config;
+
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
 import net.minecraft.registry.tag.ItemTags;
+import net.minecraft.world.biome.BiomeKeys;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class RolledItemRegistry {
     private static final Map<Item, RolledItem> REGISTRY = new HashMap<>();
@@ -21,10 +20,6 @@ public class RolledItemRegistry {
         return REGISTRY.get(item);
     }
 
-    public static Collection<RolledItem> getAll() {
-        return Collections.unmodifiableList(ALL_ITEMS);
-    }
-
     public static List<RolledItem> getItemsForContext(WorldRollContext context) {
         List<RolledItem> eligible = new ArrayList<>();
         for (RolledItem item : ALL_ITEMS) {
@@ -33,31 +28,6 @@ public class RolledItemRegistry {
             }
         }
         return eligible;
-    }
-
-    public static List<RolledItem> getEligibleRewards(WorldRollContext context, Config config) {
-        return ALL_ITEMS.stream()
-                .filter(item -> item.getRarity() >= config.minRewardRarity)
-                .filter(item -> item.getMinBorderSize() <= context.getBorderSize())
-                .filter(item -> {
-                    String path = Registries.ITEM.getId(item.getMinecraftItem()).getPath();
-                    return !config.rewardBlacklist.contains(path);
-                })
-                .filter(item -> config.allowUnscannedRewards || !item.requiresWorldScan() ||
-                        context.getScannedResources().getOrDefault(item.getMinecraftItem(), 0) > 0)
-                .collect(Collectors.toList());
-    }
-
-    private static RolledItem pickWeightedReward(List<RolledItem> eligible, net.minecraft.util.math.random.Random random) {
-        if (eligible.isEmpty()) return null;
-        double totalWeight = eligible.stream().mapToDouble(item -> 10.0 / item.getRarity()).sum();
-        double pick = random.nextDouble() * totalWeight;
-        double current = 0;
-        for (RolledItem item : eligible) {
-            current += 10.0 / item.getRarity();
-            if (current >= pick) return item;
-        }
-        return eligible.get(eligible.size() - 1);  // Fallback
     }
 
     public static void registerAll() {
@@ -252,8 +222,9 @@ public class RolledItemRegistry {
                 .needScan()
                 .build());
         register(ItemBuilder.create(Items.COARSE_DIRT)
-                .rarity(0.3)
+                .rarity(0.2)
                 .requireItem(Items.DIRT)
+                .requireItem(Items.GRAVEL)
                 .build());
         register(ItemBuilder.create(Items.PODZOL)
                 .rarity(0.6)
@@ -1227,12 +1198,12 @@ public class RolledItemRegistry {
                 .build());
 
         register(ItemBuilder.create(Items.APPLE)
-                .rarity(0.8)
+                .rarity(3.0)
                 .renewable()
-                .needScan()
+                .requireItem(Items.OAK_LEAVES)
                 .build());
         register(ItemBuilder.create(Items.GOLDEN_APPLE)
-                .rarity(3.0)
+                .rarity(5.0)
                 .minBorder(80)
                 .renewable()
                 .requireItem(Items.APPLE)
@@ -1287,18 +1258,39 @@ public class RolledItemRegistry {
         register(ItemBuilder.create(Items.RABBIT)
                 .rarity(1.5)
                 .renewable()
-                .requireAchievement("minecraft:husbandry/root")
+                .requireAnyBiome(
+                        BiomeKeys.DESERT,
+                        BiomeKeys.SNOWY_PLAINS,
+                        BiomeKeys.SNOWY_TAIGA,
+                        BiomeKeys.GROVE,
+                        BiomeKeys.SNOWY_SLOPES,
+                        BiomeKeys.FLOWER_FOREST,
+                        BiomeKeys.TAIGA,
+                        BiomeKeys.MEADOW,
+                        BiomeKeys.CHERRY_GROVE,
+                        BiomeKeys.OLD_GROWTH_PINE_TAIGA,
+                        BiomeKeys.OLD_GROWTH_SPRUCE_TAIGA)
                 .build());
         register(ItemBuilder.create(Items.COOKED_RABBIT)
                 .rarity(1.6)
                 .renewable()
-                .requireItem(Items.RABBIT)
+                .requireAnyBiome(
+                        BiomeKeys.DESERT,
+                        BiomeKeys.SNOWY_PLAINS,
+                        BiomeKeys.SNOWY_TAIGA,
+                        BiomeKeys.GROVE,
+                        BiomeKeys.SNOWY_SLOPES,
+                        BiomeKeys.FLOWER_FOREST,
+                        BiomeKeys.TAIGA,
+                        BiomeKeys.MEADOW,
+                        BiomeKeys.CHERRY_GROVE,
+                        BiomeKeys.OLD_GROWTH_PINE_TAIGA,
+                        BiomeKeys.OLD_GROWTH_SPRUCE_TAIGA)
                 .build());
 
         register(ItemBuilder.create(Items.COD)
                 .rarity(1.3)
                 .renewable()
-                .requireAchievement("minecraft:husbandry/fishy_business")
                 .build());
         register(ItemBuilder.create(Items.COOKED_COD)
                 .rarity(1.4)
@@ -1308,7 +1300,6 @@ public class RolledItemRegistry {
         register(ItemBuilder.create(Items.SALMON)
                 .rarity(1.4)
                 .renewable()
-                .requireAchievement("minecraft:husbandry/fishy_business")
                 .build());
         register(ItemBuilder.create(Items.COOKED_SALMON)
                 .rarity(1.5)
@@ -1318,19 +1309,16 @@ public class RolledItemRegistry {
         register(ItemBuilder.create(Items.TROPICAL_FISH)
                 .rarity(2.0)
                 .renewable()
-                .requireAchievement("minecraft:husbandry/tactical_fishing")
                 .build());
 
         register(ItemBuilder.create(Items.EGG)
                 .rarity(0.9)
                 .renewable()
-                .requireAchievement("minecraft:husbandry/root")
                 .build());
         register(ItemBuilder.create(Items.MILK_BUCKET)
                 .rarity(1.5)
                 .renewable()
                 .requireItem(Items.BUCKET)
-                .requireAchievement("minecraft:husbandry/root")
                 .build());
         register(ItemBuilder.create(Items.HONEY_BOTTLE)
                 .rarity(2.0)
@@ -1360,15 +1348,15 @@ public class RolledItemRegistry {
                 .requireItem(Items.MILK_BUCKET)
                 .build());
         register(ItemBuilder.create(Items.PUMPKIN_PIE)
-                .rarity(1.5)
+                .rarity(2.5)
                 .renewable()
                 .requireItem(Items.PUMPKIN)
                 .requireItem(Items.EGG)
                 .build());
 
         register(ItemBuilder.create(Items.SUSPICIOUS_STEW)
-                .rarity(2.5)
-                .minBorder(70)
+                .rarity(3.5)
+                .minBorder(120)
                 .renewable()
                 .requireItem(Items.BROWN_MUSHROOM)
                 .requireItem(Items.RED_MUSHROOM)
@@ -1400,28 +1388,26 @@ public class RolledItemRegistry {
                 .build());
 
         register(ItemBuilder.create(Items.LEATHER)
-                .rarity(1.3)
+                .rarity(4.0)
                 .renewable()
-                .requireAchievement("minecraft:husbandry/root")
                 .build());
         register(ItemBuilder.create(Items.FEATHER)
-                .rarity(1.0)
+                .rarity(2.0)
                 .renewable()
-                .requireAchievement("minecraft:husbandry/root")
                 .build());
         register(ItemBuilder.create(Items.STRING)
-                .rarity(1.2)
+                .rarity(1.5)
                 .renewable()
                 .requireAchievement("minecraft:adventure/kill_a_mob")
                 .build());
         register(ItemBuilder.create(Items.SLIME_BALL)
                 .rarity(2.0)
-                .minBorder(60)
+                .minBorder(200)
                 .renewable()
-                .needScan()
+                .requireAchievement("minecraft:adventure/kill_a_mob")
                 .build());
         register(ItemBuilder.create(Items.BONE)
-                .rarity(1.1)
+                .rarity(1.5)
                 .renewable()
                 .requireAchievement("minecraft:adventure/kill_a_mob")
                 .build());
@@ -1453,16 +1439,16 @@ public class RolledItemRegistry {
 
         register(ItemBuilder.create(Items.ENDER_PEARL)
                 .rarity(3.0)
-                .minBorder(80)
+                .minBorder(120)
+                .requireAchievement("minecraft:adventure/kill_a_mob")
                 .renewable()
-                .requireAchievement("minecraft:story/enter_the_nether")
                 .build());
         register(ItemBuilder.create(Items.ENDER_EYE)
                 .rarity(3.5)
                 .minBorder(100)
                 .renewable()
                 .requireItem(Items.ENDER_PEARL)
-                .requireItem(Items.BLAZE_POWDER)
+                .requireItem(Items.BLAZE_ROD)
                 .build());
 
         register(ItemBuilder.create(Items.GUNPOWDER)
@@ -1591,12 +1577,34 @@ public class RolledItemRegistry {
                 .rarity(3.0)
                 .minBorder(80)
                 .renewable()
-                .requireAchievement("minecraft:husbandry/root")
+                .requireAnyBiome(
+                        BiomeKeys.DESERT,
+                        BiomeKeys.SNOWY_PLAINS,
+                        BiomeKeys.SNOWY_TAIGA,
+                        BiomeKeys.GROVE,
+                        BiomeKeys.SNOWY_SLOPES,
+                        BiomeKeys.FLOWER_FOREST,
+                        BiomeKeys.TAIGA,
+                        BiomeKeys.MEADOW,
+                        BiomeKeys.CHERRY_GROVE,
+                        BiomeKeys.OLD_GROWTH_PINE_TAIGA,
+                        BiomeKeys.OLD_GROWTH_SPRUCE_TAIGA)
                 .build());
         register(ItemBuilder.create(Items.RABBIT_HIDE)
                 .rarity(1.4)
                 .renewable()
-                .requireAchievement("minecraft:husbandry/root")
+                .requireAnyBiome(
+                        BiomeKeys.DESERT,
+                        BiomeKeys.SNOWY_PLAINS,
+                        BiomeKeys.SNOWY_TAIGA,
+                        BiomeKeys.GROVE,
+                        BiomeKeys.SNOWY_SLOPES,
+                        BiomeKeys.FLOWER_FOREST,
+                        BiomeKeys.TAIGA,
+                        BiomeKeys.MEADOW,
+                        BiomeKeys.CHERRY_GROVE,
+                        BiomeKeys.OLD_GROWTH_PINE_TAIGA,
+                        BiomeKeys.OLD_GROWTH_SPRUCE_TAIGA)
                 .build());
 
         register(ItemBuilder.create(Items.WOODEN_PICKAXE)
@@ -1619,45 +1627,38 @@ public class RolledItemRegistry {
                 .requireItem(Items.STICK)
                 .build());
         register(ItemBuilder.create(Items.DIAMOND_PICKAXE)
-                .rarity(4.5)
-                .minBorder(100)
+                .rarity(8.5)
+                .minBorder(150)
                 .renewable()
                 .requireItem(Items.DIAMOND)
                 .requireItem(Items.STICK)
                 .build());
-        register(ItemBuilder.create(Items.NETHERITE_PICKAXE)
-                .rarity(11.0)
-                .minBorder(1000)
-                .renewable()
-                .requireItem(Items.DIAMOND_PICKAXE)
-                .requireItem(Items.NETHERITE_INGOT)
-                .build());
 
         register(ItemBuilder.create(Items.SHEARS)
-                .rarity(1.5)
+                .rarity(2.5)
                 .renewable()
                 .requireItem(Items.IRON_INGOT)
                 .build());
         register(ItemBuilder.create(Items.FLINT_AND_STEEL)
-                .rarity(1.8)
+                .rarity(5.0)
                 .renewable()
                 .requireItem(Items.IRON_INGOT)
                 .requireItem(Items.FLINT)
                 .build());
         register(ItemBuilder.create(Items.FLINT)
-                .rarity(0.8)
+                .rarity(2.0)
                 .renewable()
                 .requireItem(Items.GRAVEL)
                 .build());
 
         register(ItemBuilder.create(Items.FISHING_ROD)
-                .rarity(1.2)
+                .rarity(2.0)
                 .renewable()
                 .requireItem(Items.STICK)
                 .requireItem(Items.STRING)
                 .build());
         register(ItemBuilder.create(Items.CARROT_ON_A_STICK)
-                .rarity(1.5)
+                .rarity(2.5)
                 .renewable()
                 .requireItem(Items.FISHING_ROD)
                 .requireItem(Items.CARROT)
@@ -1706,7 +1707,7 @@ public class RolledItemRegistry {
 
         register(ItemBuilder.create(Items.GLASS_BOTTLE)
                 .rarity(1.0)
-                .countMultiplier(3.0)
+                .countMultiplier(2.0)
                 .renewable()
                 .requireItem(Items.GLASS)
                 .build());
@@ -1717,7 +1718,7 @@ public class RolledItemRegistry {
                 .build());
         register(ItemBuilder.create(Items.DRAGON_BREATH)
                 .rarity(8.0)
-                .minBorder(300)
+                .minBorder(700)
                 .requireAchievement("minecraft:end/dragon_breath")
                 .build());
 
@@ -1732,6 +1733,7 @@ public class RolledItemRegistry {
                 .renewable()
                 .requireItem(Items.SPIDER_EYE)
                 .requireItem(Items.BROWN_MUSHROOM)
+                .requireItem(Items.SUGAR_CANE)
                 .build());
         register(ItemBuilder.create(Items.GLISTERING_MELON_SLICE)
                 .rarity(2.5)

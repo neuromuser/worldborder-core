@@ -232,8 +232,8 @@ public class WorldBorderCoreEntity extends MobEntity {
         world.spawnParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY() + 1.0, this.getZ(), 10, 0.5, 0.5, 0.5, 0.2);
         world.spawnParticles(ParticleTypes.FIREWORK, this.getX(), this.getY() + 1.0, this.getZ(), 50, 0.5, 0.5, 0.5, 0.5);
 
-        if (this.random.nextFloat() < 0.1f) {
-            int diamonds = this.random.nextInt(4) + 1;
+        if (this.random.nextFloat() < (0.1f + (float)(this.dataTracker.get(COMPLETION_COUNT)/100))) {
+            int diamonds = this.random.nextInt(4)+1;
             ItemStack diamondStack = new ItemStack(Items.DIAMOND, diamonds);
             ItemEntity diamondEntity = new ItemEntity(world, this.getX(), this.getY() + 1.0, this.getZ(), diamondStack);
             diamondEntity.setVelocity(this.random.nextDouble() * 0.5 - 0.25, 0.5, this.random.nextDouble() * 0.5 - 0.25);
