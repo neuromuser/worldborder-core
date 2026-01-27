@@ -25,9 +25,10 @@ public class ModMenuIntegration implements ModMenuApi {
         builder.setSavingRunnable(() -> ConfigManager.save(FabricLoader.getInstance().getConfigDir().resolve("worldborder-core.json")));
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
-        var category = builder.getOrCreateCategory(Text.literal("Settings"));
+        var categoryGeneral = builder.getOrCreateCategory(Text.literal("General"));
+        var categoryRewards = builder.getOrCreateCategory(Text.literal("Rewards"));
 
-        category.addEntry(entryBuilder.startDoubleField(
+        categoryGeneral.addEntry(entryBuilder.startDoubleField(
                         Text.literal("Renewable Multiplier"),
                         config.renewableMultiplier)
                 .setDefaultValue(1.5)
@@ -37,7 +38,7 @@ public class ModMenuIntegration implements ModMenuApi {
                 .setSaveConsumer(val -> config.renewableMultiplier = val)
                 .build());
 
-        category.addEntry(entryBuilder.startDoubleField(
+        categoryGeneral.addEntry(entryBuilder.startDoubleField(
                         Text.literal("Non-Renewable Multiplier"),
                         config.nonRenewableMultiplier)
                 .setDefaultValue(0.3)
@@ -47,7 +48,7 @@ public class ModMenuIntegration implements ModMenuApi {
                 .setSaveConsumer(val -> config.nonRenewableMultiplier = val)
                 .build());
 
-        category.addEntry(entryBuilder.startDoubleField(
+        categoryGeneral.addEntry(entryBuilder.startDoubleField(
                         Text.literal("Progression Multiplier"),
                         config.progressionMultiplier)
                 .setDefaultValue(1.1)
@@ -57,14 +58,64 @@ public class ModMenuIntegration implements ModMenuApi {
                 .setSaveConsumer(val -> config.progressionMultiplier = val)
                 .build());
 
-        category.addEntry(entryBuilder.startDoubleField(
+        categoryGeneral.addEntry(entryBuilder.startDoubleField(
                         Text.literal("Randomness Variation"),
                         config.randomnessVariation)
                 .setDefaultValue(0.10)
                 .setMin(0.0)
                 .setMax(0.5)
-                .setTooltip(Text.literal("Random variation in counts (0.1 = ±10% randomness)"))
+                .setTooltip(Text.literal("Random variation in counts (0.1 = Â±10% randomness)"))
                 .setSaveConsumer(val -> config.randomnessVariation = val)
+                .build());
+
+        categoryGeneral.addEntry(entryBuilder.startDoubleField(
+                        Text.literal("Border Increase Amount"),
+                        config.borderIncreaseAmount)
+                .setDefaultValue(10.0)
+                .setMin(1.0)
+                .setMax(100.0)
+                .setTooltip(Text.literal("How much the border increases per completion (blocks)"))
+                .setSaveConsumer(val -> config.borderIncreaseAmount = val)
+                .build());
+
+        categoryRewards.addEntry(entryBuilder.startDoubleField(
+                        Text.literal("Diamond Reward Base Chance"),
+                        config.diamondRewardBaseChance)
+                .setDefaultValue(0.1)
+                .setMin(0.0)
+                .setMax(1.0)
+                .setTooltip(Text.literal("Base chance for diamond reward (0.1 = 10%)"))
+                .setSaveConsumer(val -> config.diamondRewardBaseChance = val)
+                .build());
+
+        categoryRewards.addEntry(entryBuilder.startIntField(
+                        Text.literal("Diamond Reward Min Amount"),
+                        config.diamondRewardMinAmount)
+                .setDefaultValue(1)
+                .setMin(1)
+                .setMax(64)
+                .setTooltip(Text.literal("Minimum diamonds dropped when reward triggers"))
+                .setSaveConsumer(val -> config.diamondRewardMinAmount = val)
+                .build());
+
+        categoryRewards.addEntry(entryBuilder.startIntField(
+                        Text.literal("Diamond Reward Max Amount"),
+                        config.diamondRewardMaxAmount)
+                .setDefaultValue(4)
+                .setMin(1)
+                .setMax(64)
+                .setTooltip(Text.literal("Maximum diamonds dropped when reward triggers"))
+                .setSaveConsumer(val -> config.diamondRewardMaxAmount = val)
+                .build());
+
+        categoryRewards.addEntry(entryBuilder.startDoubleField(
+                        Text.literal("Diamond Chance Increase Per Level"),
+                        config.diamondRewardChanceIncreasePerLevel)
+                .setDefaultValue(0.01)
+                .setMin(0.0)
+                .setMax(0.1)
+                .setTooltip(Text.literal("How much the diamond chance increases per completion (0.01 = +1%)"))
+                .setSaveConsumer(val -> config.diamondRewardChanceIncreasePerLevel = val)
                 .build());
 
         return builder.build();
