@@ -204,6 +204,7 @@ public class WorldBorderCoreEntity extends MobEntity {
                     break;
                 }
             } else if (WorldScanner.isRerollItem(stack.getItem()) && stack.getCount() >= 1) {
+                if (!WorldScanner.isScanned()) {return;}
                 stack.decrement(1);
                 if (stack.isEmpty()) item.discard();
 

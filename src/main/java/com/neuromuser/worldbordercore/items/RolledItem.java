@@ -9,14 +9,16 @@ public abstract class RolledItem {
 
     protected final Item minecraftItem;
     protected final double rarity;
+    protected final double countMultiplier;
     protected final int minBorderSize;
     protected final boolean renewable;
     protected final boolean requiresWorldScan;
 
-    protected RolledItem(Item item, double rarity, int minBorderSize,
+    protected RolledItem(Item item, double rarity, double countMultiplier, int minBorderSize,
                          boolean renewable, boolean requiresWorldScan) {
         this.minecraftItem = item;
         this.rarity = rarity;
+        this.countMultiplier = countMultiplier;
         this.minBorderSize = minBorderSize;
         this.renewable = renewable;
         this.requiresWorldScan = requiresWorldScan;
@@ -64,7 +66,7 @@ public abstract class RolledItem {
         double B = 2.5;
         double C = 1.3;
         double baseCount = A / (1.0 + B * Math.pow(rarity, C));
-        return Math.max(1.0, Math.round(baseCount * 10.0) / 10.0);
+        return Math.max(1.0, Math.round(baseCount * 10.0) / 10.0) * countMultiplier;
     }
 
     protected double calculateProgressionFactor(WorldRollContext context) {
@@ -107,4 +109,6 @@ public abstract class RolledItem {
     public String getDisplayName() {
         return minecraftItem.getName().getString();
     }
+
+    protected abstract int calculateMaxCraftableCount(WorldRollContext context);
 }

@@ -17,6 +17,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.Chunk;
@@ -62,6 +63,11 @@ public class WorldScanner {
     private static double persistentLastScannedCenterZ = 0;
     private static ServerWorld currentWorld;
 
+    private static long overworldTotalBlocks = 0;
+    private static long overworldScannedBlocks = 0;
+    private static long netherTotalBlocks = 0;
+    private static long netherScannedBlocks = 0;
+
     public static void initialize() {
         setupUnobtainableItems();
         setupRerollItems();
@@ -100,6 +106,8 @@ public class WorldScanner {
 
     public static void startScan(ServerWorld world) {
         currentWorld = world;
+        RecipeHelper.initialize(world);
+
         WorldBorder border = world.getWorldBorder();
         double size = border.getSize();
         boolean isIncrementalScan = (lastScannedSize > 0 && lastScannedSize < size);
@@ -111,6 +119,7 @@ public class WorldScanner {
         currentBorder = border;
 
         currentPhase = 0;
+        scanningNether = false;
         double centerX = border.getCenterX();
         double centerZ = border.getCenterZ();
         if (size > 59999900) {
@@ -139,6 +148,8 @@ public class WorldScanner {
         currentY = minY;
         currentZ = minZ;
         scannedBlocks = 0;
+        overworldScannedBlocks = 0;
+        netherScannedBlocks = 0;
 
         chestPositions.clear();
         currentChestIndex = 0;
@@ -159,6 +170,29 @@ public class WorldScanner {
             totalBlocks -= skippedBlocks;
         }
 
+        overworldTotalBlocks = totalBlocks;
+
+        ServerWorld nether = world.getServer().getWorld(World.NETHER);
+        if (nether != null) {
+            WorldBorder netherBorder = nether.getWorldBorder();
+            double netherRadius = netherBorder.getSize() / 2.0;
+            int netherMinX = (int) Math.floor(netherBorder.getCenterX() - netherRadius);
+            int netherMaxX = (int) Math.ceil(netherBorder.getCenterX() + netherRadius);
+            int netherMinZ = (int) Math.floor(netherBorder.getCenterZ() - netherRadius);
+            int netherMaxZ = (int) Math.ceil(netherBorder.getCenterZ() + netherRadius);
+            int netherMinY = nether.getBottomY();
+            int netherMaxY = nether.getTopY();
+
+            long netherRangeX = netherMaxX - netherMinX;
+            long netherRangeY = netherMaxY - netherMinY;
+            long netherRangeZ = netherMaxZ - netherMinZ;
+            netherTotalBlocks = netherRangeX * netherRangeY * netherRangeZ;
+
+            totalBlocks += netherTotalBlocks;
+        } else {
+            netherTotalBlocks = 0;
+        }
+
         isScanning = true;
         scanned = false;
 
@@ -172,14 +206,20 @@ public class WorldScanner {
         if (!isScanning) return;
 
         if (scanningPlayers) {
-            currentPhase = 3;
+            currentPhase = 4;
             scanPlayerInventories();
             return;
         }
 
         if (scanningChests) {
-            currentPhase = 2;
+            currentPhase = 3;
             scanChests(world);
+            return;
+        }
+
+        if (scanningNether) {
+            currentPhase = 2;
+            scanNetherBlocks();
             return;
         }
 
@@ -187,10 +227,9 @@ public class WorldScanner {
         int blocksThisTick = 0;
         BlockPos.Mutable pos = new BlockPos.Mutable();
 
-        while (blocksThisTick < BLOCKS_PER_TICK && isScanning && !scanningChests) {
+        while (blocksThisTick < BLOCKS_PER_TICK && isScanning && !scanningChests && !scanningNether) {
             if (shouldScanBlock(currentX, currentZ)) {
-                boolean shouldCount = scanningNether ||
-                        (currentBorder != null && currentBorder.contains(currentX, currentZ));
+                boolean shouldCount = currentBorder != null && currentBorder.contains(currentX, currentZ);
 
                 if (shouldCount) {
                     int chunkX = currentX >> 4;
@@ -207,13 +246,15 @@ public class WorldScanner {
                                 world.getBiome(pos).getKey().ifPresent(scannedBiomes::add);
                             } catch (Exception ignored) {}
 
-                            Item item = getItemFromBlock(state);
+                            Item item = RecipeHelper.getItemFromBlock(state);
                             if (item != null && !unobtainableItems.contains(item)) {
                                 availableResources.merge(item, 1, Integer::sum);
 
-                                Item processed = getProcessedForm(item);
-                                if (processed != null && processed != item) {
-                                    availableResources.merge(processed, 1, Integer::sum);
+                                Set<Item> processedForms = RecipeHelper.getProcessedForms(item);
+                                for (Item processed : processedForms) {
+                                    if (processed != item) {
+                                        availableResources.merge(processed, 1, Integer::sum);
+                                    }
                                 }
                             }
 
@@ -227,6 +268,7 @@ public class WorldScanner {
 
                 blocksThisTick++;
                 scannedBlocks++;
+                overworldScannedBlocks++;
             }
 
             currentY++;
@@ -237,8 +279,120 @@ public class WorldScanner {
                     currentZ = minZ;
                     currentX++;
                     if (currentX >= maxX) {
+                        WorldborderCore.LOGGER.info("Overworld scan complete. Scanned {} blocks", overworldScannedBlocks);
+                        startNetherScanning();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private static void startNetherScanning() {
+        ServerWorld nether = currentWorld.getServer().getWorld(World.NETHER);
+        if (nether == null) {
+            WorldborderCore.LOGGER.warn("Nether dimension not available, skipping Nether scan");
+            startChestScanning();
+            return;
+        }
+
+        scanningNether = true;
+        currentPhase = 2;
+
+        WorldBorder netherBorder = nether.getWorldBorder();
+        double netherRadius = netherBorder.getSize() / 2.0;
+
+        int minX = (int) Math.floor(netherBorder.getCenterX() - netherRadius);
+        maxX = (int) Math.ceil(netherBorder.getCenterX() + netherRadius);
+        minZ = (int) Math.floor(netherBorder.getCenterZ() - netherRadius);
+        maxZ = (int) Math.ceil(netherBorder.getCenterZ() + netherRadius);
+        minY = nether.getBottomY();
+        maxY = nether.getTopY();
+
+        currentX = minX;
+        currentY = minY;
+        currentZ = minZ;
+
+        hasInnerBounds = false;
+
+        WorldborderCore.LOGGER.info("Starting Nether scan: minX={}, maxX={}, minY={}, maxY={}, minZ={}, maxZ={}",
+                minX, maxX, minY, maxY, minZ, maxZ);
+    }
+
+    private static void scanNetherBlocks() {
+        ServerWorld nether = currentWorld.getServer().getWorld(World.NETHER);
+        if (nether == null) {
+            WorldborderCore.LOGGER.warn("Nether became unavailable during scan");
+            scanningNether = false;
+            startChestScanning();
+            return;
+        }
+
+        int blocksThisTick = 0;
+        BlockPos.Mutable pos = new BlockPos.Mutable();
+
+        while (blocksThisTick < BLOCKS_PER_TICK && scanningNether) {
+            int chunkX = currentX >> 4;
+            int chunkZ = currentZ >> 4;
+
+            boolean isChunkLoaded = nether.isChunkLoaded(chunkX, chunkZ);
+
+            if (!isChunkLoaded) {
+                try {
+                    nether.getChunk(chunkX, chunkZ);
+                    isChunkLoaded = true;
+                } catch (Exception e) {
+                    WorldborderCore.LOGGER.debug("Failed to load Nether chunk at {}, {}", chunkX, chunkZ);
+                }
+            }
+
+            if (isChunkLoaded) {
+                pos.set(currentX, currentY, currentZ);
+
+                try {
+                    Chunk chunk = nether.getChunk(chunkX, chunkZ);
+                    BlockState state = chunk.getBlockState(pos);
+
+                    try {
+                        nether.getBiome(pos).getKey().ifPresent(scannedBiomes::add);
+                    } catch (Exception ignored) {}
+
+                    Item item = RecipeHelper.getItemFromBlock(state);
+                    if (item != null && !unobtainableItems.contains(item)) {
+                        availableResources.merge(item, 1, Integer::sum);
+
+                        Set<Item> processedForms = RecipeHelper.getProcessedForms(item);
+                        for (Item processed : processedForms) {
+                            if (processed != item) {
+                                availableResources.merge(processed, 1, Integer::sum);
+                            }
+                        }
+                    }
+
+                    if (isContainerBlock(state)) {
+                        chestPositions.add(pos.toImmutable());
+                    }
+                } catch (Exception e) {
+                    WorldborderCore.LOGGER.debug("Error scanning Nether block at {}: {}", pos, e.getMessage());
+                }
+            }
+
+            blocksThisTick++;
+            scannedBlocks++;
+            netherScannedBlocks++;
+
+            currentY++;
+            if (currentY >= maxY) {
+                currentY = minY;
+                currentZ++;
+                if (currentZ >= maxZ) {
+                    currentZ = minZ;
+                    currentX++;
+                    if (currentX >= maxX) {
+                        scanningNether = false;
+                        WorldborderCore.LOGGER.info("Nether scan complete. Scanned {} blocks, found {} Nether biomes",
+                                netherScannedBlocks, scannedBiomes.size());
                         startChestScanning();
-                        playersToScan.addAll(world.getPlayers());
                         break;
                     }
                 }
@@ -249,7 +403,7 @@ public class WorldScanner {
     private static void startChestScanning() {
         scanningChests = true;
         currentChestIndex = 0;
-        currentPhase = 2;
+        currentPhase = 3;
     }
 
     private static void scanChests(ServerWorld world) {
@@ -261,9 +415,20 @@ public class WorldScanner {
             int chunkX = pos.getX() >> 4;
             int chunkZ = pos.getZ() >> 4;
 
-            if (world.isChunkLoaded(chunkX, chunkZ)) {
+            ServerWorld targetWorld = world;
+            if (world.getRegistryKey() == World.OVERWORLD) {
+                ServerWorld nether = world.getServer().getWorld(World.NETHER);
+                if (nether != null && nether.isChunkLoaded(chunkX, chunkZ)) {
+                    BlockEntity netherBE = nether.getBlockEntity(pos);
+                    if (netherBE != null) {
+                        targetWorld = nether;
+                    }
+                }
+            }
+
+            if (targetWorld.isChunkLoaded(chunkX, chunkZ)) {
                 try {
-                    BlockEntity blockEntity = world.getBlockEntity(pos);
+                    BlockEntity blockEntity = targetWorld.getBlockEntity(pos);
                     if (blockEntity != null) {
                         scanContainer(blockEntity);
                     }
@@ -288,14 +453,10 @@ public class WorldScanner {
     private static void startPlayerScanning(ServerWorld world) {
         scanningPlayers = true;
         currentPlayerIndex = 0;
-        currentPhase = 3;
+        currentPhase = 4;
 
         playersToScan.clear();
-        for (ServerPlayerEntity player : world.getPlayers()) {
-            if (currentBorder == null || currentBorder.contains(player.getX(), player.getZ())) {
-                playersToScan.add(player);
-            }
-        }
+        playersToScan.addAll(world.getServer().getPlayerManager().getPlayerList());
     }
 
     private static void scanPlayerInventories() {
@@ -380,134 +541,15 @@ public class WorldScanner {
         scanned = true;
         scanningChests = false;
         scanningPlayers = false;
+        scanningNether = false;
         currentBorder = null;
-        currentPhase = 4;
-
-        if (scanningNether) {
-            scanningNether = false;
-        }
+        currentPhase = 5;
 
         savePersistentState();
     }
 
-    private static Item getItemFromBlock(BlockState state) {
-        if (state.isOf(Blocks.DIAMOND_ORE) || state.isOf(Blocks.DEEPSLATE_DIAMOND_ORE)) return Items.DIAMOND;
-        if (state.isOf(Blocks.IRON_ORE) || state.isOf(Blocks.DEEPSLATE_IRON_ORE)) return Items.RAW_IRON;
-        if (state.isOf(Blocks.GOLD_ORE) || state.isOf(Blocks.DEEPSLATE_GOLD_ORE)) return Items.RAW_GOLD;
-        if (state.isOf(Blocks.COPPER_ORE) || state.isOf(Blocks.DEEPSLATE_COPPER_ORE)) return Items.RAW_COPPER;
-        if (state.isOf(Blocks.COAL_ORE) || state.isOf(Blocks.DEEPSLATE_COAL_ORE)) return Items.COAL;
-        if (state.isOf(Blocks.REDSTONE_ORE) || state.isOf(Blocks.DEEPSLATE_REDSTONE_ORE)) return Items.REDSTONE;
-        if (state.isOf(Blocks.LAPIS_ORE) || state.isOf(Blocks.DEEPSLATE_LAPIS_ORE)) return Items.LAPIS_LAZULI;
-        if (state.isOf(Blocks.EMERALD_ORE) || state.isOf(Blocks.DEEPSLATE_EMERALD_ORE)) return Items.EMERALD;
-        if (state.isOf(Blocks.NETHER_QUARTZ_ORE)) return Items.QUARTZ;
-        if (state.isOf(Blocks.NETHER_GOLD_ORE)) return Items.GOLD_NUGGET;
-        if (state.isOf(Blocks.ANCIENT_DEBRIS)) return Items.ANCIENT_DEBRIS;
-        if (state.isOf(Blocks.AMETHYST_CLUSTER) || state.isOf(Blocks.LARGE_AMETHYST_BUD) ||
-                state.isOf(Blocks.MEDIUM_AMETHYST_BUD) || state.isOf(Blocks.SMALL_AMETHYST_BUD)) {
-            return Items.AMETHYST_SHARD;
-        }
-
-        if (state.isOf(Blocks.GLOWSTONE)) return Items.GLOWSTONE_DUST;
-        if (state.isOf(Blocks.SEA_LANTERN)) return Items.PRISMARINE_CRYSTALS;
-        if (state.isOf(Blocks.SPONGE)) return Items.SPONGE;
-        if (state.isOf(Blocks.WET_SPONGE)) return Items.WET_SPONGE;
-        if (state.isOf(Blocks.MELON)) return Items.MELON_SLICE;
-        if (state.isOf(Blocks.PUMPKIN) || state.isOf(Blocks.CARVED_PUMPKIN)) return Items.PUMPKIN;
-
-        if (state.isOf(Blocks.HAY_BLOCK)) return Items.WHEAT;
-        if (state.isOf(Blocks.COAL_BLOCK)) return Items.COAL;
-        if (state.isOf(Blocks.IRON_BLOCK)) return Items.IRON_INGOT;
-        if (state.isOf(Blocks.GOLD_BLOCK)) return Items.GOLD_INGOT;
-        if (state.isOf(Blocks.COPPER_BLOCK)) return Items.COPPER_INGOT;
-        if (state.isOf(Blocks.DIAMOND_BLOCK)) return Items.DIAMOND;
-        if (state.isOf(Blocks.EMERALD_BLOCK)) return Items.EMERALD;
-        if (state.isOf(Blocks.LAPIS_BLOCK)) return Items.LAPIS_LAZULI;
-        if (state.isOf(Blocks.REDSTONE_BLOCK)) return Items.REDSTONE;
-        if (state.isOf(Blocks.NETHERITE_BLOCK)) return Items.NETHERITE_INGOT;
-        if (state.isOf(Blocks.RAW_IRON_BLOCK)) return Items.RAW_IRON;
-        if (state.isOf(Blocks.RAW_COPPER_BLOCK)) return Items.RAW_COPPER;
-        if (state.isOf(Blocks.RAW_GOLD_BLOCK)) return Items.RAW_GOLD;
-        if (state.isOf(Blocks.AMETHYST_BLOCK)) return Items.AMETHYST_SHARD;
-        if (state.isOf(Blocks.BONE_BLOCK)) return Items.BONE;
-        if (state.isOf(Blocks.SLIME_BLOCK)) return Items.SLIME_BALL;
-        if (state.isOf(Blocks.HONEY_BLOCK)) return Items.HONEY_BOTTLE;
-        if (state.isOf(Blocks.DRIED_KELP_BLOCK)) return Items.DRIED_KELP;
-        if (state.isOf(Blocks.SNOW_BLOCK) || state.isOf(Blocks.SNOW)) return Items.SNOWBALL;
-
-        if (state.isOf(Blocks.WHEAT)) return Items.WHEAT;
-        if (state.isOf(Blocks.CARROTS)) return Items.CARROT;
-        if (state.isOf(Blocks.POTATOES)) return Items.POTATO;
-        if (state.isOf(Blocks.BEETROOTS)) return Items.BEETROOT;
-        if (state.isOf(Blocks.SUGAR_CANE)) return Items.SUGAR_CANE;
-        if (state.isOf(Blocks.BAMBOO)) return Items.BAMBOO;
-        if (state.isOf(Blocks.SWEET_BERRY_BUSH)) return Items.SWEET_BERRIES;
-        if (state.isOf(Blocks.COCOA)) return Items.COCOA_BEANS;
-        if (state.isOf(Blocks.NETHER_WART)) return Items.NETHER_WART;
-        if (state.isOf(Blocks.CACTUS)) return Items.CACTUS;
-        if (state.isOf(Blocks.KELP) || state.isOf(Blocks.KELP_PLANT)) return Items.KELP;
-        if (state.isOf(Blocks.SEA_PICKLE)) return Items.SEA_PICKLE;
-        if (state.isOf(Blocks.VINE)) return Items.VINE;
-        if (state.isOf(Blocks.LILY_PAD)) return Items.LILY_PAD;
-        if (state.isOf(Blocks.BIG_DRIPLEAF) || state.isOf(Blocks.BIG_DRIPLEAF_STEM)) return Items.BIG_DRIPLEAF;
-        if (state.isOf(Blocks.SMALL_DRIPLEAF)) return Items.SMALL_DRIPLEAF;
-        if (state.isOf(Blocks.HANGING_ROOTS)) return Items.HANGING_ROOTS;
-        if (state.isOf(Blocks.GLOW_LICHEN)) return Items.GLOW_LICHEN;
-        if (state.isOf(Blocks.SPORE_BLOSSOM)) return Items.SPORE_BLOSSOM;
-        if (state.isOf(Blocks.CHORUS_FLOWER) || state.isOf(Blocks.CHORUS_PLANT)) return Items.CHORUS_FRUIT;
-        if (state.isOf(Blocks.CAVE_VINES) || state.isOf(Blocks.CAVE_VINES_PLANT)) return Items.GLOW_BERRIES;
-        if (state.isOf(Blocks.PINK_PETALS)) return Items.PINK_PETALS;
-        if (state.isOf(Blocks.TORCHFLOWER) || state.isOf(Blocks.TORCHFLOWER_CROP)) return Items.TORCHFLOWER;
-        if (state.isOf(Blocks.PITCHER_CROP) || state.isOf(Blocks.PITCHER_PLANT)) return Items.PITCHER_PLANT;
-
-        if (state.isOf(Blocks.OAK_LEAVES)) return Items.OAK_SAPLING;
-        if (state.isOf(Blocks.SPRUCE_LEAVES)) return Items.SPRUCE_SAPLING;
-        if (state.isOf(Blocks.BIRCH_LEAVES)) return Items.BIRCH_SAPLING;
-        if (state.isOf(Blocks.JUNGLE_LEAVES)) return Items.JUNGLE_SAPLING;
-        if (state.isOf(Blocks.ACACIA_LEAVES)) return Items.ACACIA_SAPLING;
-        if (state.isOf(Blocks.DARK_OAK_LEAVES)) return Items.DARK_OAK_SAPLING;
-        if (state.isOf(Blocks.MANGROVE_LEAVES)) return Items.MANGROVE_PROPAGULE;
-        if (state.isOf(Blocks.CHERRY_LEAVES)) return Items.CHERRY_SAPLING;
-        if (state.isOf(Blocks.AZALEA_LEAVES)) return Items.AZALEA;
-        if (state.isOf(Blocks.FLOWERING_AZALEA_LEAVES)) return Items.FLOWERING_AZALEA;
-
-        if (state.isOf(Blocks.CRIMSON_NYLIUM)) return Items.CRIMSON_FUNGUS;
-        if (state.isOf(Blocks.WARPED_NYLIUM)) return Items.WARPED_FUNGUS;
-
-        return state.getBlock().asItem();
-    }
-
-    private static Item getProcessedForm(Item rawItem) {
-        if (rawItem == Items.RAW_IRON) return Items.IRON_INGOT;
-        if (rawItem == Items.RAW_COPPER) return Items.COPPER_INGOT;
-        if (rawItem == Items.RAW_GOLD) return Items.GOLD_INGOT;
-
-        if (rawItem == Items.ANCIENT_DEBRIS) return Items.NETHERITE_SCRAP;
-
-        if (rawItem == Items.GOLD_NUGGET) return Items.GOLD_INGOT;
-
-        if (rawItem == Items.BEEF) return Items.COOKED_BEEF;
-        if (rawItem == Items.PORKCHOP) return Items.COOKED_PORKCHOP;
-        if (rawItem == Items.CHICKEN) return Items.COOKED_CHICKEN;
-        if (rawItem == Items.MUTTON) return Items.COOKED_MUTTON;
-        if (rawItem == Items.RABBIT) return Items.COOKED_RABBIT;
-        if (rawItem == Items.COD) return Items.COOKED_COD;
-        if (rawItem == Items.SALMON) return Items.COOKED_SALMON;
-        if (rawItem == Items.POTATO) return Items.BAKED_POTATO;
-        if (rawItem == Items.KELP) return Items.DRIED_KELP;
-
-        if (rawItem == Items.CACTUS) return Items.GREEN_DYE;
-
-        if (rawItem == Items.SAND) return Items.GLASS;
-
-        if (rawItem == Items.CLAY_BALL) return Items.BRICK;
-
-        if (rawItem.toString().contains("_log")) return Items.CHARCOAL;
-
-        return null;
-    }
-
     public static RolledItem getRandomAvailableRolledItem( net.minecraft.util.math.random.Random random, double borderSize,
-                                                          int completionCount, ServerWorld world) {
+                                                           int completionCount, ServerWorld world) {
         WorldRollContext context = new WorldRollContext(
                 world,
                 borderSize,
@@ -551,29 +593,65 @@ public class WorldScanner {
     public static int getProgress() {
         if (totalBlocks == 0) return 0;
 
-        if (currentPhase == 1 || (!scanningChests && !scanningPlayers)) {
-            return (int) ((scannedBlocks / (double) totalBlocks) * 95);
+        if (currentPhase == 1) {
+            if (overworldTotalBlocks == 0) return 0;
+            return (int) ((overworldScannedBlocks / (double) overworldTotalBlocks) * 40);
         }
 
-        if (scanningChests || currentPhase == 2) {
+        if (currentPhase == 2 || scanningNether) {
+            if (netherTotalBlocks == 0) return 40;
+            int netherProgress = (int) ((netherScannedBlocks / (double) netherTotalBlocks) * 40);
+            return 40 + netherProgress;
+        }
+
+        if (currentPhase == 3 || scanningChests) {
             int chestProgress = chestPositions.isEmpty() ? 100 :
                     (int) ((currentChestIndex / (double) chestPositions.size()) * 100);
-            return 95 + (chestProgress * 20 / 400);
+            return 80 + (chestProgress * 15 / 100);
         }
 
-        int playerProgress = playersToScan.isEmpty() ? 100 :
-                (int) ((currentPlayerIndex / (double) playersToScan.size()) * 100);
-        return 99 + (playerProgress * 15 / 1000);
+        if (currentPhase == 4 || scanningPlayers) {
+            int playerProgress = playersToScan.isEmpty() ? 100 :
+                    (int) ((currentPlayerIndex / (double) playersToScan.size()) * 100);
+            return 95 + (playerProgress * 5 / 100);
+        }
+
+        return 100;
     }
 
     public static boolean isRerollItem(Item item) {
         return rerollItems.contains(item);
     }
 
+    public static String getScanDebugInfo() {
+        StringBuilder info = new StringBuilder();
+        info.append("Scanning: ").append(isScanning).append("\n");
+        info.append("Scanned: ").append(scanned).append("\n");
+        info.append("Phase: ").append(currentPhase).append("\n");
+        info.append("Scanning Nether: ").append(scanningNether).append("\n");
+        info.append("Scanning Chests: ").append(scanningChests).append("\n");
+        info.append("Scanning Players: ").append(scanningPlayers).append("\n");
+        info.append("Overworld blocks: ").append(overworldScannedBlocks).append("/").append(overworldTotalBlocks).append("\n");
+        info.append("Nether blocks: ").append(netherScannedBlocks).append("/").append(netherTotalBlocks).append("\n");
+        info.append("Total resources found: ").append(availableResources.size()).append("\n");
+        info.append("Total biomes found: ").append(scannedBiomes.size()).append("\n");
+        return info.toString();
+    }
+
+    public static int getCurrentPhase() {
+        return currentPhase;
+    }
+
+    public static boolean isScanningNether() {
+        return scanningNether;
+    }
+
     public static void savePersistentState() {
         if (scanned) {
             persistentResources.clear();
             persistentResources.putAll(availableResources);
+            persistentScannedBiomes.clear();
+            persistentScannedBiomes.addAll(scannedBiomes);
             persistentScanned = true;
             persistentLastScannedSize = lastScannedSize;
             persistentLastScannedCenterX = lastScannedCenterX;
@@ -585,17 +663,13 @@ public class WorldScanner {
         if (persistentScanned) {
             availableResources.clear();
             availableResources.putAll(persistentResources);
+            scannedBiomes.clear();
+            scannedBiomes.addAll(persistentScannedBiomes);
             scanned = true;
             lastScannedSize = persistentLastScannedSize;
             lastScannedCenterX = persistentLastScannedCenterX;
             lastScannedCenterZ = persistentLastScannedCenterZ;
         }
-    }
-
-    private static void scanBiomesDuringTick(ServerWorld world, BlockPos pos) {
-        try {
-            world.getBiome(pos).getKey().ifPresent(scannedBiomes::add);
-        } catch (Exception ignored) {}
     }
 
     public static void reset() {
@@ -624,6 +698,10 @@ public class WorldScanner {
         hasInnerBounds = false;
         totalBlocks = 0;
         scannedBlocks = 0;
+        overworldTotalBlocks = 0;
+        overworldScannedBlocks = 0;
+        netherTotalBlocks = 0;
+        netherScannedBlocks = 0;
 
         chestPositions.clear();
         currentChestIndex = 0;
@@ -636,10 +714,13 @@ public class WorldScanner {
         currentWorld = null;
 
         persistentResources.clear();
+        persistentScannedBiomes.clear();
         persistentScanned = false;
         persistentLastScannedSize = 0;
         persistentLastScannedCenterX = 0;
         persistentLastScannedCenterZ = 0;
+
+        RecipeHelper.clearCaches();
 
         WorldborderCore.LOGGER.info("WorldScanner reset complete");
     }
