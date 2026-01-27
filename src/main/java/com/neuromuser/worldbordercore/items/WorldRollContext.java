@@ -2,16 +2,18 @@ package com.neuromuser.worldbordercore.items;
 
 import com.neuromuser.worldbordercore.config.Config;
 import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.tag.TagKey;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.random.Random;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.biome.Biome;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class WorldRollContext {
+
     private final ServerWorld world;
     private final double borderSize;
     private final int completionCount;
@@ -101,7 +103,7 @@ public class WorldRollContext {
     }
 
     public boolean hasAnyFromTag(TagKey<Item> tag) {
-        return Registries.ITEM.getEntryList(tag)
+        return Registry.ITEM.getEntryList(tag)
                 .stream()
                 .flatMap(entries -> entries.stream())
                 .map(entry -> entry.value())
@@ -109,7 +111,7 @@ public class WorldRollContext {
     }
 
     public int getTotalCountFromTag(TagKey<Item> tag) {
-        return Registries.ITEM.getEntryList(tag)
+        return Registry.ITEM.getEntryList(tag)
                 .stream()
                 .flatMap(entries -> entries.stream())
                 .map(entry -> entry.value())
@@ -122,14 +124,14 @@ public class WorldRollContext {
     }
 
     public boolean itemIsInTag(Item item, TagKey<Item> tag) {
-        return Registries.ITEM.getEntryList(tag)
+        return Registry.ITEM.getEntryList(tag)
                 .stream()
                 .flatMap(entries -> entries.stream())
                 .anyMatch(entry -> entry.value() == item);
     }
 
     public Set<Item> getAvailableFromTag(TagKey<Item> tag) {
-        return Registries.ITEM.getEntryList(tag)
+        return Registry.ITEM.getEntryList(tag)
                 .stream()
                 .flatMap(entries -> entries.stream())
                 .map(entry -> entry.value())

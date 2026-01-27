@@ -1,9 +1,8 @@
 package com.neuromuser.worldbordercore.items;
 
-
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
-import net.minecraft.registry.tag.ItemTags;
+import net.minecraft.tag.ItemTags;
 import net.minecraft.world.biome.BiomeKeys;
 import java.util.*;
 
@@ -68,11 +67,6 @@ public class RolledItemRegistry {
                 .renewable()
                 .needScan()
                 .build());
-        register(ItemBuilder.create(Items.CHERRY_LOG)
-                .rarity(1.1)
-                .renewable()
-                .needScan()
-                .build());
         register(ItemBuilder.create(Items.CRIMSON_STEM)
                 .rarity(1.5)
                 .renewable()
@@ -126,12 +120,6 @@ public class RolledItemRegistry {
                 .countMultiplier(4.0)
                 .renewable()
                 .requireItem(Items.MANGROVE_LOG)
-                .build());
-        register(ItemBuilder.create(Items.CHERRY_PLANKS)
-                .rarity(1.1)
-                .countMultiplier(4.0)
-                .renewable()
-                .requireItem(Items.CHERRY_LOG)
                 .build());
         register(ItemBuilder.create(Items.CRIMSON_PLANKS)
                 .rarity(1.5)
@@ -1267,7 +1255,6 @@ public class RolledItemRegistry {
                         BiomeKeys.FLOWER_FOREST,
                         BiomeKeys.TAIGA,
                         BiomeKeys.MEADOW,
-                        BiomeKeys.CHERRY_GROVE,
                         BiomeKeys.OLD_GROWTH_PINE_TAIGA,
                         BiomeKeys.OLD_GROWTH_SPRUCE_TAIGA)
                 .build());
@@ -1283,7 +1270,6 @@ public class RolledItemRegistry {
                         BiomeKeys.FLOWER_FOREST,
                         BiomeKeys.TAIGA,
                         BiomeKeys.MEADOW,
-                        BiomeKeys.CHERRY_GROVE,
                         BiomeKeys.OLD_GROWTH_PINE_TAIGA,
                         BiomeKeys.OLD_GROWTH_SPRUCE_TAIGA)
                 .build());
@@ -1586,7 +1572,6 @@ public class RolledItemRegistry {
                         BiomeKeys.FLOWER_FOREST,
                         BiomeKeys.TAIGA,
                         BiomeKeys.MEADOW,
-                        BiomeKeys.CHERRY_GROVE,
                         BiomeKeys.OLD_GROWTH_PINE_TAIGA,
                         BiomeKeys.OLD_GROWTH_SPRUCE_TAIGA)
                 .build());
@@ -1602,7 +1587,6 @@ public class RolledItemRegistry {
                         BiomeKeys.FLOWER_FOREST,
                         BiomeKeys.TAIGA,
                         BiomeKeys.MEADOW,
-                        BiomeKeys.CHERRY_GROVE,
                         BiomeKeys.OLD_GROWTH_PINE_TAIGA,
                         BiomeKeys.OLD_GROWTH_SPRUCE_TAIGA)
                 .build());
@@ -1874,12 +1858,6 @@ public class RolledItemRegistry {
                 .requireItem(Items.OAK_PLANKS)
                 .requireItem(Items.STICK)
                 .build());
-        register(ItemBuilder.create(Items.OAK_HANGING_SIGN)
-                .rarity(1.2)
-                .renewable()
-                .requireItem(Items.OAK_LOG)
-                .requireItem(Items.CHAIN)
-                .build());
 
         register(ItemBuilder.create(Items.LADDER)
                 .rarity(0.9)
@@ -1972,13 +1950,5 @@ public class RolledItemRegistry {
                 .minBorder(70)
                 .needScan()
                 .build());
-
-        register(ItemBuilder.create(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE)
-                .rarity(9.0)
-                .minBorder(800)
-                .needScan()
-                .build());
     }
 }
-        //TODO: ITEM COMBINATIONS
-        //TODO: BAMBOO ITEMS

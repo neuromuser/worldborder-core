@@ -1,8 +1,8 @@
 package com.neuromuser.worldbordercore.items;
 
 import net.minecraft.item.Item;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.tag.TagKey;
+import net.minecraft.tag.TagKey;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.biome.Biome;
 import java.util.ArrayList;
 import java.util.List;

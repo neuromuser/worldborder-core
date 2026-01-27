@@ -1,10 +1,10 @@
 package com.neuromuser.worldbordercore.items;
 
 import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.registry.tag.TagKey;
+import net.minecraft.tag.ItemTags;
+import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
 
 public class MaterialGroups {
 
@@ -25,18 +25,18 @@ public class MaterialGroups {
     public static final TagKey<Item> GEMS_COAL = createCommonTag("gems/coal");
 
     private static TagKey<Item> createTag(String name) {
-        return TagKey.of(Registries.ITEM.getKey(), new Identifier("worldborder-core", name));
+        return TagKey.of(Registry.ITEM.getKey(), new Identifier("worldborder-core", name));
     }
 
     private static TagKey<Item> createCommonTag(String name) {
-        return TagKey.of(Registries.ITEM.getKey(), new Identifier("c", name));
+        return TagKey.of(Registry.ITEM.getKey(), new Identifier("c", name));
     }
 
     public static TagKey<Item> tag(String namespacedId) {
-        return TagKey.of(Registries.ITEM.getKey(), new Identifier(namespacedId));
+        return TagKey.of(Registry.ITEM.getKey(), new Identifier(namespacedId));
     }
 
     public static TagKey<Item> tag(String namespace, String path) {
-        return TagKey.of(Registries.ITEM.getKey(), new Identifier(namespace, path));
+        return TagKey.of(Registry.ITEM.getKey(), new Identifier(namespace, path));
     }
 }

@@ -2,6 +2,7 @@ package com.neuromuser.worldbordercore.entity;
 
 import com.neuromuser.worldbordercore.CoreState;
 import com.neuromuser.worldbordercore.WorldScanner;
+import com.neuromuser.worldbordercore.config.Config;
 import com.neuromuser.worldbordercore.config.ConfigManager;
 import com.neuromuser.worldbordercore.items.RolledItem;
 import com.neuromuser.worldbordercore.items.WorldRollContext;
@@ -156,7 +157,10 @@ public class WorldBorderCoreEntity extends MobEntity {
 
         world.spawnEntity(display);
         this.textDisplayUuid = display.getUuid();
+
         return display;
+
+
     }
 
     private ArmorStandEntity getTextDisplay(ServerWorld world) {
@@ -225,6 +229,7 @@ public class WorldBorderCoreEntity extends MobEntity {
 
     private void onRequirementFulfilled() {
         ServerWorld world = (ServerWorld) this.getWorld();
+        Config config = ConfigManager.get();
 
         world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 4.0f, 0.9f + this.random.nextFloat() * 0.2f);
         world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.BLOCKS, 2.0f, 1.0f);
@@ -232,8 +237,15 @@ public class WorldBorderCoreEntity extends MobEntity {
         world.spawnParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY() + 1.0, this.getZ(), 10, 0.5, 0.5, 0.5, 0.2);
         world.spawnParticles(ParticleTypes.FIREWORK, this.getX(), this.getY() + 1.0, this.getZ(), 50, 0.5, 0.5, 0.5, 0.5);
 
-        if (this.random.nextFloat() < (0.1f + (float)(this.dataTracker.get(COMPLETION_COUNT)/100))) {
-            int diamonds = this.random.nextInt(4)+1;
+        int completionCount = this.dataTracker.get(COMPLETION_COUNT);
+        double diamondChance = config.diamondRewardBaseChance + (completionCount * config.diamondRewardChanceIncreasePerLevel);
+
+        if (this.random.nextFloat() < diamondChance) {
+            int minDiamonds = Math.min(config.diamondRewardMinAmount, config.diamondRewardMaxAmount);
+            int maxDiamonds = Math.max(config.diamondRewardMinAmount, config.diamondRewardMaxAmount);
+            int diamondRange = maxDiamonds - minDiamonds + 1;
+            int diamonds = minDiamonds + (diamondRange > 1 ? this.random.nextInt(diamondRange) : 0);
+
             ItemStack diamondStack = new ItemStack(Items.DIAMOND, diamonds);
             ItemEntity diamondEntity = new ItemEntity(world, this.getX(), this.getY() + 1.0, this.getZ(), diamondStack);
             diamondEntity.setVelocity(this.random.nextDouble() * 0.5 - 0.25, 0.5, this.random.nextDouble() * 0.5 - 0.25);
@@ -243,7 +255,7 @@ public class WorldBorderCoreEntity extends MobEntity {
         }
 
         WorldBorder border = world.getWorldBorder();
-        border.setSize(border.getSize() + 10.0);
+        border.setSize(border.getSize() + config.borderIncreaseAmount);
 
         int completions = this.dataTracker.get(COMPLETION_COUNT) + 1;
         this.dataTracker.set(COMPLETION_COUNT, completions);
