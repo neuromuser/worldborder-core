@@ -24,14 +24,7 @@ public class ItemBuilder {
         this.item = item;
     }
 
-    public static class CraftingRequirement {
-        public final Item requiredItem;
-        public final int amountNeeded;
-
-        public CraftingRequirement(Item item, int amount) {
-            this.requiredItem = item;
-            this.amountNeeded = amount;
-        }
+    public record CraftingRequirement(Item requiredItem, int amountNeeded) {
     }
 
     public static ItemBuilder create(Item item) {
@@ -138,24 +131,5 @@ public class ItemBuilder {
             return rollConditions.stream().allMatch(cond -> cond.test(context));
         }
 
-        @Override
-        protected int calculateMaxCraftableCount(WorldRollContext context) {
-            if (craftingRequirements.isEmpty()) {
-                return Integer.MAX_VALUE;
-            }
-
-            int maxCraftable = Integer.MAX_VALUE;
-
-            for (CraftingRequirement req : craftingRequirements) {
-                int available = context.getItemCount(req.requiredItem);
-                if (available <= 0) {
-                    return 0;
-                }
-                int canMakeFromThis = available / req.amountNeeded;
-                maxCraftable = Math.min(maxCraftable, canMakeFromThis);
-            }
-
-            return maxCraftable;
-        }
     }
 }

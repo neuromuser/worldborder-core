@@ -103,5 +103,4 @@ public abstract class RolledItem {
 
     public Item getMinecraftItem() { return minecraftItem; }
 
-    protected abstract int calculateMaxCraftableCount(WorldRollContext context);
 }

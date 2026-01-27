@@ -1153,7 +1153,7 @@ public class RolledItemRegistry {
                 .renewable()
                 .requireAchievement("minecraft:husbandry/breed_all_animals")
                 .build());
-        register(ItemBuilder.create(Items.SCUTE)
+        register(ItemBuilder.create(Items.TURTLE_SCUTE)
                 .rarity(4.5)
                 .minBorder(150)
                 .renewable()
@@ -1163,7 +1163,7 @@ public class RolledItemRegistry {
                 .rarity(5.0)
                 .minBorder(150)
                 .renewable()
-                .requireItem(Items.SCUTE)
+                .requireItem(Items.TURTLE_SCUTE)
                 .build());
 
         register(ItemBuilder.create(Items.WHEAT)

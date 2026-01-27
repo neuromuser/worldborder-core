@@ -9,8 +9,6 @@ import net.minecraft.item.Items;
 import net.minecraft.recipe.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.collection.DefaultedList;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -139,10 +137,10 @@ public class RecipeHelper {
     private static void buildRecipeCaches(ServerWorld world) {
         RecipeManager recipeManager = world.getServer().getRecipeManager();
 
-        for (Recipe<?> recipe : recipeManager.values()) {
-
+        for (RecipeEntry<?> entry : recipeManager.values()) {
+            Recipe<?> recipe = entry.value();
             if (recipe instanceof SmeltingRecipe smeltingRecipe) {
-                ItemStack output = smeltingRecipe.getOutput(world.getRegistryManager());
+                ItemStack output = smeltingRecipe.getResult(world.getRegistryManager());
                 for (Ingredient ingredient : smeltingRecipe.getIngredients()) {
                     for (ItemStack inputStack : ingredient.getMatchingStacks()) {
                         Item input = inputStack.getItem();
@@ -151,7 +149,7 @@ public class RecipeHelper {
                 }
             }
             else if (recipe instanceof BlastingRecipe blastingRecipe) {
-                ItemStack output = blastingRecipe.getOutput(world.getRegistryManager());
+                ItemStack output = blastingRecipe.getResult(world.getRegistryManager());
                 for (Ingredient ingredient : blastingRecipe.getIngredients()) {
                     for (ItemStack inputStack : ingredient.getMatchingStacks()) {
                         Item input = inputStack.getItem();
@@ -160,7 +158,7 @@ public class RecipeHelper {
                 }
             }
             else if (recipe instanceof SmokingRecipe smokingRecipe) {
-                ItemStack output = smokingRecipe.getOutput(world.getRegistryManager());
+                ItemStack output = smokingRecipe.getResult(world.getRegistryManager());
                 for (Ingredient ingredient : smokingRecipe.getIngredients()) {
                     for (ItemStack inputStack : ingredient.getMatchingStacks()) {
                         Item input = inputStack.getItem();

@@ -50,7 +50,7 @@ public class WorldRollContext {
 
         boolean hasIt = world.getPlayers().stream().anyMatch(player -> {
             var advancement = world.getServer().getAdvancementLoader()
-                    .get(new Identifier(advancementId));
+                    .get(Identifier.of(advancementId));
             if (advancement == null) return false;
             return player.getAdvancementTracker().getProgress(advancement).isDone();
         });

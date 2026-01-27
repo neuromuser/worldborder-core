@@ -25,18 +25,18 @@ public class MaterialGroups {
     public static final TagKey<Item> GEMS_COAL = createCommonTag("gems/coal");
 
     private static TagKey<Item> createTag(String name) {
-        return TagKey.of(Registries.ITEM.getKey(), new Identifier("worldborder-core", name));
+        return TagKey.of(Registries.ITEM.getKey(), Identifier.of("worldborder-core", name));
     }
 
     private static TagKey<Item> createCommonTag(String name) {
-        return TagKey.of(Registries.ITEM.getKey(), new Identifier("c", name));
+        return TagKey.of(Registries.ITEM.getKey(), Identifier.of("c", name));
     }
 
     public static TagKey<Item> tag(String namespacedId) {
-        return TagKey.of(Registries.ITEM.getKey(), new Identifier(namespacedId));
+        return TagKey.of(Registries.ITEM.getKey(), Identifier.of(namespacedId));
     }
 
     public static TagKey<Item> tag(String namespace, String path) {
-        return TagKey.of(Registries.ITEM.getKey(), new Identifier(namespace, path));
+        return TagKey.of(Registries.ITEM.getKey(), Identifier.of(namespace, path));
     }
 }
