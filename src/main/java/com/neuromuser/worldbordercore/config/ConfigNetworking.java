@@ -1,4 +1,4 @@
-package com.neuromuser.worldbordercore;
+package com.neuromuser.worldbordercore.config;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;

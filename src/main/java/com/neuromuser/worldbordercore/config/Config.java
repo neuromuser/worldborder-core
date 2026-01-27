@@ -1,8 +1,7 @@
-package com.neuromuser.worldbordercore;
-
+package com.neuromuser.worldbordercore.config;
 public class Config {
     public double renewableMultiplier = 1.5;
     public double nonRenewableMultiplier = 0.3;
-    public double progressionMultiplier = 1.05;
+    public double progressionMultiplier = 1.1;
     public double randomnessVariation = 0.1;
 }

@@ -26,6 +26,8 @@ public class WorldBorderCoreCommand {
                 .then(CommandManager.literal("count")
                         .then(CommandManager.argument("item", StringArgumentType.greedyString())
                                 .executes(WorldBorderCoreCommand::countItem)))
+                .then(CommandManager.literal("debug")
+                        .executes(WorldBorderCoreCommand::debug))
         );
     }
 
@@ -123,5 +125,18 @@ public class WorldBorderCoreCommand {
             source.sendError(Text.literal("Invalid item ID format: " + itemInput));
             return 0;
         }
+    }
+
+    private static int debug(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+
+        String debugInfo = WorldScanner.getScanDebugInfo();
+        String[] lines = debugInfo.split("\n");
+
+        for (String line : lines) {
+            source.sendFeedback(() -> Text.literal(line), false);
+        }
+
+        return 1;
     }
 }

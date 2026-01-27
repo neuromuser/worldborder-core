@@ -2,6 +2,9 @@ package com.neuromuser.worldbordercore.entity;
 
 import com.neuromuser.worldbordercore.CoreState;
 import com.neuromuser.worldbordercore.WorldScanner;
+import com.neuromuser.worldbordercore.config.ConfigManager;
+import com.neuromuser.worldbordercore.items.RolledItem;
+import com.neuromuser.worldbordercore.items.WorldRollContext;
 import com.neuromuser.worldbordercore.mixin.ArmorStandEntityAccessor;
 import net.minecraft.entity.*;
 import net.minecraft.entity.damage.DamageSource;
@@ -27,7 +30,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.border.WorldBorder;
-
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,6 +53,7 @@ public class WorldBorderCoreEntity extends MobEntity {
     private int ticksSinceLastCollection = 0;
     private boolean hasRolledFirstRequirement = false;
     private int ticksUntilNextRequirement = 0;
+    private boolean waitingForScanToRoll = false;
 
     public WorldBorderCoreEntity(EntityType<? extends MobEntity> type, World world) {
         super(type, world);
@@ -88,6 +92,11 @@ public class WorldBorderCoreEntity extends MobEntity {
             }
         }
 
+        if (waitingForScanToRoll && WorldScanner.isScanned() && !WorldScanner.isScanning()) {
+            waitingForScanToRoll = false;
+            rollNewRequirement();
+        }
+
         if (WorldScanner.isScanning()) {
             if (ticksUntilNextRequirement > 0) {
                 ticksUntilNextRequirement = 0;
@@ -98,13 +107,9 @@ public class WorldBorderCoreEntity extends MobEntity {
             }
         }
 
-        if (hasRolledFirstRequirement && ticksUntilNextRequirement == 0 && getRequiredCount() > 0) {
+        if (hasRolledFirstRequirement && !waitingForScanToRoll && getRequiredCount() > 0) {
             if (this.age % 10 == 0) collectItems();
             if (++ticksSinceLastCollection >= REROLL_TIME) rollNewRequirement();
-        }
-
-        if (hasRolledFirstRequirement && getRequiredCount() == 0 && !WorldScanner.isScanning() && WorldScanner.isScanned()) {
-            rollNewRequirement();
         }
 
         if (this.age % 80 == 0) playAmbientSound();
@@ -201,6 +206,7 @@ public class WorldBorderCoreEntity extends MobEntity {
                     break;
                 }
             } else if (WorldScanner.isRerollItem(stack.getItem()) && stack.getCount() >= 1) {
+                if (!WorldScanner.isScanned()) {return;}
                 stack.decrement(1);
                 if (stack.isEmpty()) item.discard();
 
@@ -228,8 +234,8 @@ public class WorldBorderCoreEntity extends MobEntity {
         world.spawnParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY() + 1.0, this.getZ(), 10, 0.5, 0.5, 0.5, 0.2);
         world.spawnParticles(ParticleTypes.FIREWORK, this.getX(), this.getY() + 1.0, this.getZ(), 50, 0.5, 0.5, 0.5, 0.5);
 
-        if (this.random.nextFloat() < 0.1f) {
-            int diamonds = this.random.nextInt(4) + 1;
+        if (this.random.nextFloat() < (0.1f + (float)(this.dataTracker.get(COMPLETION_COUNT)/100))) {
+            int diamonds = this.random.nextInt(4)+1;
             ItemStack diamondStack = new ItemStack(Items.DIAMOND, diamonds);
             ItemEntity diamondEntity = new ItemEntity(world, this.getX(), this.getY() + 1.0, this.getZ(), diamondStack);
             diamondEntity.setVelocity(this.random.nextDouble() * 0.5 - 0.25, 0.5, this.random.nextDouble() * 0.5 - 0.25);
@@ -246,7 +252,9 @@ public class WorldBorderCoreEntity extends MobEntity {
 
         this.dataTracker.set(REQUIRED_ITEM, "");
         this.dataTracker.set(REQUIRED_COUNT, 0);
+
         WorldScanner.startScan(world);
+        waitingForScanToRoll = true;
     }
 
     private void rollNewRequirement() {
@@ -257,8 +265,24 @@ public class WorldBorderCoreEntity extends MobEntity {
         double borderSize = border.getSize();
         int completions = this.dataTracker.get(COMPLETION_COUNT);
 
-        Item item = WorldScanner.getRandomAvailableItem(this.random, borderSize);
-        int count = WorldScanner.getRequiredCount(item, completions);
+        ServerWorld serverWorld = (ServerWorld) this.getWorld();
+
+        WorldRollContext context = new WorldRollContext(
+                serverWorld,
+                borderSize,
+                completions,
+                new HashMap<>(WorldScanner.availableResources),
+                WorldScanner.getScannedBiomes(),
+                ConfigManager.get(),
+                this.random
+        );
+
+        RolledItem rolledItem = WorldScanner.getRandomAvailableRolledItem(
+                this.random, borderSize, completions, serverWorld
+        );
+
+        int count = rolledItem.calculateRequiredCount(context);
+        Item item = rolledItem.getMinecraftItem();
 
         String itemId = Registries.ITEM.getId(item).toString();
         this.dataTracker.set(REQUIRED_ITEM, itemId);
@@ -331,6 +355,7 @@ public class WorldBorderCoreEntity extends MobEntity {
         nbt.putBoolean("HasRolledFirst", this.hasRolledFirstRequirement);
         nbt.putInt("TicksUntilNext", this.ticksUntilNextRequirement);
         nbt.putBoolean("HasScanned", this.dataTracker.get(HAS_SCANNED));
+        nbt.putBoolean("WaitingForScan", this.waitingForScanToRoll);
 
         if (this.textDisplayUuid != null) {
             nbt.putUuid("TextDisplayUuid", this.textDisplayUuid);
@@ -357,6 +382,9 @@ public class WorldBorderCoreEntity extends MobEntity {
         }
         if (nbt.contains("HasScanned")) {
             this.dataTracker.set(HAS_SCANNED, nbt.getBoolean("HasScanned"));
+        }
+        if (nbt.contains("WaitingForScan")) {
+            this.waitingForScanToRoll = nbt.getBoolean("WaitingForScan");
         }
 
         if (nbt.contains("TextDisplayUuid")) {
