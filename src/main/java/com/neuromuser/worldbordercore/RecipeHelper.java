@@ -7,10 +7,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.recipe.*;
-import net.minecraft.registry.Registries;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.registry.Registry;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -115,12 +113,6 @@ public class RecipeHelper {
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.CHORUS_PLANT, Items.CHORUS_FRUIT);
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.CAVE_VINES, Items.GLOW_BERRIES);
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.CAVE_VINES_PLANT, Items.GLOW_BERRIES);
-        BLOCK_TO_ITEM_OVERRIDE.put(Blocks.PINK_PETALS, Items.PINK_PETALS);
-        BLOCK_TO_ITEM_OVERRIDE.put(Blocks.TORCHFLOWER, Items.TORCHFLOWER);
-        BLOCK_TO_ITEM_OVERRIDE.put(Blocks.TORCHFLOWER_CROP, Items.TORCHFLOWER);
-        BLOCK_TO_ITEM_OVERRIDE.put(Blocks.PITCHER_CROP, Items.PITCHER_PLANT);
-        BLOCK_TO_ITEM_OVERRIDE.put(Blocks.PITCHER_PLANT, Items.PITCHER_PLANT);
-
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.OAK_LEAVES, Items.OAK_SAPLING);
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.SPRUCE_LEAVES, Items.SPRUCE_SAPLING);
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.BIRCH_LEAVES, Items.BIRCH_SAPLING);
@@ -128,7 +120,7 @@ public class RecipeHelper {
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.ACACIA_LEAVES, Items.ACACIA_SAPLING);
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.DARK_OAK_LEAVES, Items.DARK_OAK_SAPLING);
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.MANGROVE_LEAVES, Items.MANGROVE_PROPAGULE);
-        BLOCK_TO_ITEM_OVERRIDE.put(Blocks.CHERRY_LEAVES, Items.CHERRY_SAPLING);
+
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.AZALEA_LEAVES, Items.AZALEA);
         BLOCK_TO_ITEM_OVERRIDE.put(Blocks.FLOWERING_AZALEA_LEAVES, Items.FLOWERING_AZALEA);
 
@@ -142,7 +134,7 @@ public class RecipeHelper {
         for (Recipe<?> recipe : recipeManager.values()) {
 
             if (recipe instanceof SmeltingRecipe smeltingRecipe) {
-                ItemStack output = smeltingRecipe.getOutput(world.getRegistryManager());
+                ItemStack output = smeltingRecipe.getOutput();
                 for (Ingredient ingredient : smeltingRecipe.getIngredients()) {
                     for (ItemStack inputStack : ingredient.getMatchingStacks()) {
                         Item input = inputStack.getItem();
@@ -151,7 +143,7 @@ public class RecipeHelper {
                 }
             }
             else if (recipe instanceof BlastingRecipe blastingRecipe) {
-                ItemStack output = blastingRecipe.getOutput(world.getRegistryManager());
+                ItemStack output = blastingRecipe.getOutput();
                 for (Ingredient ingredient : blastingRecipe.getIngredients()) {
                     for (ItemStack inputStack : ingredient.getMatchingStacks()) {
                         Item input = inputStack.getItem();
@@ -160,7 +152,7 @@ public class RecipeHelper {
                 }
             }
             else if (recipe instanceof SmokingRecipe smokingRecipe) {
-                ItemStack output = smokingRecipe.getOutput(world.getRegistryManager());
+                ItemStack output = smokingRecipe.getOutput();
                 for (Ingredient ingredient : smokingRecipe.getIngredients()) {
                     for (ItemStack inputStack : ingredient.getMatchingStacks()) {
                         Item input = inputStack.getItem();
@@ -218,7 +210,7 @@ public class RecipeHelper {
             results.add(Items.BRICK);
         }
 
-        String itemName = Registries.ITEM.getId(rawItem).getPath();
+        String itemName = Registry.ITEM.getId(rawItem).getPath();
         if (itemName.endsWith("_log") || itemName.endsWith("_stem") || itemName.equals("wood")) {
             results.add(Items.CHARCOAL);
         }

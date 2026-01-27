@@ -132,7 +132,7 @@ public class WorldBorderCoreCommand {
         String[] lines = debugInfo.split("\n");
 
         for (String line : lines) {
-            source.sendFeedback(() -> Text.literal(line), false);
+            source.sendFeedback(Text.literal(line), false);
         }
 
         return 1;

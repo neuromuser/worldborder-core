@@ -35,9 +35,9 @@ dependencies {
         mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
         modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
         modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    modCompileOnly "maven.modrinth:cloth-config:${cloth_config_version}"
-    modCompileOnly "maven.modrinth:modmenu:${modmenu_version}"
-    modCompileOnly "me.shedaniel.cloth:basic-math:+"
+    modImplementation "maven.modrinth:cloth-config:${cloth_config_version}"
+    modImplementation "maven.modrinth:modmenu:${modmenu_version}"
+    modImplementation "me.shedaniel.cloth:basic-math:+"
 }
 
 processResources {
