@@ -60,13 +60,10 @@ public abstract class RolledItem {
     }
 
     protected double calculateBaseCount(WorldRollContext context) {
-        double A = 100.0;  // Maximum base count for rarity 0
-        double B = 2.5;    // How quickly count drops with rarity
-        double C = 1.3;    // Curve shape (1.0 = linear, >1.0 = faster drop)
-
+        double A = 100.0;
+        double B = 2.5;
+        double C = 1.3;
         double baseCount = A / (1.0 + B * Math.pow(rarity, C));
-
-        // Ensure minimum of 1
         return Math.max(1.0, Math.round(baseCount * 10.0) / 10.0);
     }
 
@@ -98,7 +95,7 @@ public abstract class RolledItem {
     }
 
     protected double applyCountCaps(double count) {
-        return count;
+        return Math.min(count, 512);
     }
 
     public Item getMinecraftItem() { return minecraftItem; }

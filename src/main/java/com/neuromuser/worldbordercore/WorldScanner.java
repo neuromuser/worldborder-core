@@ -17,7 +17,6 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.registry.Registries;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.Chunk;
@@ -110,7 +109,7 @@ public class WorldScanner {
         }
         scannedBiomes.clear();
         currentBorder = border;
-        scanningNether = false;
+
         currentPhase = 0;
         double centerX = border.getCenterX();
         double centerZ = border.getCenterZ();
