@@ -128,23 +128,29 @@ public class WorldBorderCoreEntity extends MobEntity {
 
         textDisplay.setPosition(this.getX(), this.getY() + 1.2, this.getZ());
 
+        Text displayText;
         if (WorldScanner.isScanning()) {
             int progress = WorldScanner.getProgress();
-            textDisplay.setCustomName(Text.translatable("worldbordercore.display.generating", progress));
+            displayText = Text.translatable("worldbordercore.display.generating", progress);
         }
         else if (!WorldScanner.isScanned()) {
-            textDisplay.setCustomName(Text.translatable("worldbordercore.display.waiting"));
+            displayText = Text.translatable("worldbordercore.display.waiting");
         }
         else if (getRequiredCount() > 0) {
             Item required = getRequiredItem();
             if (required != null && required != Items.AIR) {
-                textDisplay.setCustomName(Text.translatable("worldbordercore.display.requirement",
-                        getRequiredCount(), required.getName()));
+                displayText = Text.translatable("worldbordercore.display.requirement",
+                        getRequiredCount(), required.getName());
             } else {
-                textDisplay.setCustomName(Text.translatable("worldbordercore.display.initializing"));
+                displayText = Text.translatable("worldbordercore.display.initializing");
             }
         } else {
-            textDisplay.setCustomName(Text.translatable("worldbordercore.display.initializing"));
+            displayText = Text.translatable("worldbordercore.display.initializing");
+        }
+
+        if (!displayText.equals(textDisplay.getCustomName())) {
+            textDisplay.setCustomName(displayText);
+            textDisplay.calculateDimensions();
         }
     }
 
@@ -152,11 +158,12 @@ public class WorldBorderCoreEntity extends MobEntity {
         ArmorStandEntity display = EntityType.ARMOR_STAND.create(world);
         if (display == null) return null;
 
+        display.setPosition(this.getX(), this.getY() + 1.2, this.getZ());
         ((ArmorStandEntityAccessor) display).invokeSetMarker(true);
         display.setInvisible(true);
         display.setNoGravity(true);
         display.setCustomNameVisible(true);
-        display.setCustomName(Text.literal("WorldBorderCoreTextDisplay"));
+        display.setCustomName(Text.literal(""));
 
         world.spawnEntity(display);
         this.textDisplayUuid = display.getUuid();
