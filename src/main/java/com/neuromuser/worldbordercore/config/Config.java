@@ -4,9 +4,11 @@ public class Config {
     public double nonRenewableMultiplier = 0.3;
     public double progressionMultiplier = 1.1;
     public double randomnessVariation = 0.1;
-    public double borderIncreaseAmount = 10.0;
+    public double borderIncreaseAmount = 4.0;
     public double diamondRewardBaseChance = 0.1;
     public int diamondRewardMinAmount = 1;
     public int diamondRewardMaxAmount = 4;
-    public double diamondRewardChanceIncreasePerLevel = 0.01;
+    public double diamondRewardChanceIncreasePerLevel = 0.008;
+    public double mendingRewardBaseChance = 0.02;
+    public double mendingRewardChanceIncreasePerLevel = 0.004;
 }
