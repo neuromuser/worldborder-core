@@ -7,6 +7,8 @@ import com.neuromuser.worldbordercore.config.ConfigManager;
 import com.neuromuser.worldbordercore.items.RolledItem;
 import com.neuromuser.worldbordercore.items.WorldRollContext;
 import com.neuromuser.worldbordercore.mixin.ArmorStandEntityAccessor;
+import net.minecraft.enchantment.EnchantmentLevelEntry;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.*;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.decoration.ArmorStandEntity;
@@ -16,6 +18,7 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
+import net.minecraft.item.EnchantedBookItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -136,7 +139,7 @@ public class WorldBorderCoreEntity extends MobEntity {
             Item required = getRequiredItem();
             if (required != null && required != Items.AIR) {
                 textDisplay.setCustomName(Text.translatable("worldbordercore.display.requirement",
-                        getRequiredCount(), required.getName().getString()));
+                        getRequiredCount(), required.getName()));
             } else {
                 textDisplay.setCustomName(Text.translatable("worldbordercore.display.initializing"));
             }
@@ -157,10 +160,7 @@ public class WorldBorderCoreEntity extends MobEntity {
 
         world.spawnEntity(display);
         this.textDisplayUuid = display.getUuid();
-
         return display;
-
-
     }
 
     private ArmorStandEntity getTextDisplay(ServerWorld world) {
@@ -238,21 +238,45 @@ public class WorldBorderCoreEntity extends MobEntity {
         world.spawnParticles(ParticleTypes.FIREWORK, this.getX(), this.getY() + 1.0, this.getZ(), 50, 0.5, 0.5, 0.5, 0.5);
 
         int completionCount = this.dataTracker.get(COMPLETION_COUNT);
-        double diamondChance = config.diamondRewardBaseChance + (completionCount * config.diamondRewardChanceIncreasePerLevel);
 
-        if (this.random.nextFloat() < diamondChance) {
+        double diamondChance =
+                config.diamondRewardBaseChance +
+                        (completionCount * config.diamondRewardChanceIncreasePerLevel);
+
+        double mendingChance =
+                config.mendingRewardBaseChance +
+                        (completionCount * config.mendingRewardChanceIncreasePerLevel);
+
+        float rng = this.random.nextFloat();
+
+        if (rng < diamondChance) {
             int minDiamonds = Math.min(config.diamondRewardMinAmount, config.diamondRewardMaxAmount);
             int maxDiamonds = Math.max(config.diamondRewardMinAmount, config.diamondRewardMaxAmount);
-            int diamondRange = maxDiamonds - minDiamonds + 1;
-            int diamonds = minDiamonds + (diamondRange > 1 ? this.random.nextInt(diamondRange) : 0);
+            int diamonds = minDiamonds + this.random.nextInt(maxDiamonds - minDiamonds + 1);
 
-            ItemStack diamondStack = new ItemStack(Items.DIAMOND, diamonds);
-            ItemEntity diamondEntity = new ItemEntity(world, this.getX(), this.getY() + 1.0, this.getZ(), diamondStack);
-            diamondEntity.setVelocity(this.random.nextDouble() * 0.5 - 0.25, 0.5, this.random.nextDouble() * 0.5 - 0.25);
-            world.spawnEntity(diamondEntity);
+            ItemStack stack = new ItemStack(Items.DIAMOND, diamonds);
+            ItemEntity entity = new ItemEntity(world, this.getX(), this.getY() + 1.0, this.getZ(), stack);
+            entity.setVelocity(this.random.nextDouble() * 0.5 - 0.25, 0.5, this.random.nextDouble() * 0.5 - 0.25);
+            world.spawnEntity(entity);
 
-            world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 0.5f, 1.5f);
+            world.playSound(null, this.getBlockPos(),
+                    SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 0.5f, 1.5f);
         }
+        else if (rng < diamondChance + mendingChance) {
+            ItemStack book = new ItemStack(Items.ENCHANTED_BOOK);
+            EnchantedBookItem.addEnchantment(
+                    book,
+                    new EnchantmentLevelEntry(Enchantments.MENDING, 1)
+            );
+
+            ItemEntity entity = new ItemEntity(world, this.getX(), this.getY() + 1.0, this.getZ(), book);
+            entity.setVelocity(this.random.nextDouble() * 0.5 - 0.25, 0.5, this.random.nextDouble() * 0.5 - 0.25);
+            world.spawnEntity(entity);
+
+            world.playSound(null, this.getBlockPos(),
+                    SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.BLOCKS, 1.0f, 1.2f);
+        }
+
 
         WorldBorder border = world.getWorldBorder();
         border.setSize(border.getSize() + config.borderIncreaseAmount);
